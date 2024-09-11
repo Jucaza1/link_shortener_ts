@@ -27,31 +27,32 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         this.deleteLink = this.deleteLink.bind(this)
         this.cancelLink = this.cancelLink.bind(this)
         this.createLink = this.createLink.bind(this)
-        this.getLinkbyID = this.getLinkbyID.bind(this)
+        this.getLinkByID = this.getLinkByID.bind(this)
+        this.getLinkByShort = this.getLinkByShort.bind(this)
         this.getLinksByUser = this.getLinksByUser.bind(this)
         this.init()
     }
     getLinksByUser(UserID: string): Array<Link> {
         let result: Array<Link> = []
-        let res = this.database.prepare(`
+        const res = this.database.prepare(`
         SELECT * FROM Link WHERE userID == ?`).all(UserID)
         if (res !== undefined) {
             result = { ...result, ...(res as Array<Link>) }
         }
         return result
     }
-    getLinkbyID(id: string): Link | undefined {
-        let res = this.database.prepare(`
+    getLinkByID(id: number): Link | undefined {
+        const res = this.database.prepare(`
         SELECT * FROM Link WHERE ID == ?`).get(id)
         return res as Link | undefined
     }
     createLink(link: Link): Link | undefined {
         const stmt = this.database.prepare(`
-            INSERT INTO Link (userID, ID, url, short, status, deleted,
+            INSERT INTO Link (userID, url, short, status, deleted,
             createdAt, deletedAt, expiresAt)
-            VALUES (?,?,?,?,?,?,?,?,?)
+            VALUES (?,?,?,?,?,?,?,?)
             `)
-        const info = stmt.run(link.userID, link.ID, link.url, link.short,
+        const info = stmt.run(link.userID, link.url, link.short,
             link.status, link.deleted, link.createdAt, link.deletedAt, link.expiresAt)
         if (info === undefined) return undefined
         if (info.changes < 1) return undefined
@@ -78,22 +79,22 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         return true
     }
     serveLink(short: string): string | undefined {
-        let res = this.database.prepare(`
+        const res = this.database.prepare(`
         SELECT url FROM Link WHERE short == ?`).get(short)
         return res as string | undefined
     }
     getUserByID(id: string): User | undefined {
-        let res = this.database.prepare(`
+        const res = this.database.prepare(`
         SELECT * FROM User WHERE ID == ?`).get(id)
         return res as User | undefined
     }
     getUserByEmail(email: string): User | undefined {
-        let res = this.database.prepare(`
+        const res = this.database.prepare(`
         SELECT * FROM User WHERE email == ?`).get(email)
         return res as User | undefined
     }
     getUserByUsername(username: string): User | undefined {
-        let res = this.database.prepare(`
+        const res = this.database.prepare(`
         SELECT * FROM User WHERE username == ?`).get(username)
         return res as User | undefined
     }
@@ -130,7 +131,6 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         return true
     }
     trackServe(short: string): boolean {
-
         let stmt = this.database.prepare(`
             UPDATE TABLE TrackLink SET activity = activity + 1 WHERE short == ?
             `)
@@ -145,11 +145,27 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         if (info === undefined || info.changes < 1) return false
         return true
     }
+    getLastLinkID(): number {
+        const res = this.database.prepare(`
+        SELECT max(ID) FROM Link`).get()
+        if ("number" === typeof res)
+            return res
+        if ("string" === typeof res && res.length !== 0) {
+            return parseInt(res)
+        }
+        return -1
+    }
+    getLinkByShort(short: string): Link | undefined {
+        const res = this.database.prepare(`
+        SELECT ID FROM Link WHERE short == ?`).get(short)
+        return res as Link | undefined
+    }
     private init() {
         this.database.pragma('journal_mode = WAL');
         this.database.exec(`
             CREATE TABLE IF NOT EXISTS User (
-            ID UUID PRIMARY KEY ,
+            ID UUID PRIMARY KEY,
+            isAdmin BOOLEAN DEFAULT 0,
             guest BOOLEAN DEFAULT 0,
             username TEXT NOT NULL UNIQUE,
             email TEXT NOT NULL UNIQUE,
@@ -161,7 +177,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         `)
         this.database.exec(`
             CREATE TABLE IF NOT EXISTS Link (
-            ID UUID PRIMARY KEY ,
+            ID INT PRIMARY KEY AUTOICREMENT,
             userID UUID ,
             url TEXT NOT NULL,
             short TEXT NOT NULL,

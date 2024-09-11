@@ -20,7 +20,7 @@ export const UserSchema = z.object({
 })
 export const LinkSchema = z.object({
     userID: z.string().uuid(),
-    ID: z.string().uuid(),
+    ID: z.number(),
     url: z.string().url(),
     short: z.string().url(),
     status: z.boolean(),
@@ -123,7 +123,7 @@ export function createLinkFromParams(params: LinkParams, userID: string, short: 
     }
     const validParams = validationRes.data
     const link: Link = {
-        ID: uuidv4(),
+        ID: 0,
         userID: userID,
         url: validParams.url,
         short: short,

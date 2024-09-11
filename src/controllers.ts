@@ -1,31 +1,57 @@
 import * as db from "./db/main.js";
 import * as types from "./types.js"
 import { errorSource, Operation } from "./error.js";
+import { Hasher } from "./hash.js";
 
-export interface UserController {
+export interface UserController{
     getUserByID(id: string): Operation<types.User_DTO | undefined>
     getUserbyEmail(email: string): Operation<types.User_DTO | undefined>
     getUserbyUsername(username: string): Operation<types.User_DTO | undefined>
     createUser(userParams: types.UserParams): Operation<types.User_DTO | undefined>
-
+    createAdmin(userParams: types.UserParams): Operation<types.User | undefined>
+    cancelUserByID(id: string, forAdmin: boolean): Operation<types.User_DTO | undefined>
+    deleteUserByID(id: string, forAdmin: boolean): Operation<types.User_DTO | types.User | undefined>
 }
-export class Controller implements UserController {
+export interface LinkController {
+    getLinkByID(id: string, forAdmin: boolean): Operation<types.Link_DTO | types.Link | undefined>
+    getLinksByUser(id: string, forAdmin: boolean): Operation<Array<types.Link_DTO> | Array<types.Link>>
+    createLink(url: string, userID: string, forAdmin: boolean): Operation<types.Link_DTO | types.Link | undefined>
+}
+export interface LinkServerController {
+    serveLink(short: string): Operation<string | undefined>
+    trackLink(short: string):Operation<boolean>
+}
+export class ControllerImp implements UserController, LinkController, LinkServerController {
     udb: db.UserDB
     ldb: db.LinkDB
+    haser: Hasher
     encrypter: types.PasswordEncrypter
-    constructor(udb: db.UserDB, ldb: db.LinkDB, encrypter: types.PasswordEncrypter) {
+    constructor(udb: db.UserDB, ldb: db.LinkDB, hasher: Hasher, encrypter: types.PasswordEncrypter) {
         this.udb = udb
         this.ldb = ldb
+        this.haser = hasher
         this.encrypter = encrypter
+        this.getUserByID = this.getUserByID.bind(this)
+        this.getUserbyEmail = this.getUserbyEmail.bind(this)
+        this.getUserbyUsername = this.getUserbyUsername.bind(this)
+        this.createUser = this.createUser.bind(this)
+        this.createAdmin = this.createAdmin.bind(this)
+        this.cancelUserByID = this.cancelUserByID.bind(this)
+        this.deleteUserByID = this.deleteUserByID.bind(this)
+        this.getLinkByID = this.getLinkByID.bind(this)
+        this.getLinksByUser = this.getLinksByUser.bind(this)
+        this.createLink = this.createLink.bind(this)
+        this.serveLink = this.serveLink.bind(this)
+        this.trackLink = this.trackLink.bind(this)
+
     }
     getUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
         let result: types.User | undefined
-        let validID: string
         const validationRes = types.UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid id")
         }
-        validID = validationRes.data
+        const validID = validationRes.data
         try {
             result = this.udb.getUserByID(validID)
         } catch (e) {
@@ -41,12 +67,11 @@ export class Controller implements UserController {
     }
     getUserbyEmail(email: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
         let result: types.User | undefined
-        let validEmail: string
         const validationRes = types.UserSchema.shape.email.safeParse(email)
         if (!validationRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid email")
         }
-        validEmail = validationRes.data
+        const validEmail = validationRes.data
         try {
             result = this.udb.getUserByEmail(validEmail)
         } catch (e) {
@@ -62,12 +87,11 @@ export class Controller implements UserController {
     }
     getUserbyUsername(username: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
         let result: types.User | undefined
-        let validUsername: string
         const validationRes = types.UserSchema.shape.username.safeParse(username)
         if (!validationRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid username")
         }
-        validUsername = validationRes.data
+        const validUsername = validationRes.data
         try {
             result = this.udb.getUserByEmail(validUsername)
         } catch (e) {
@@ -83,12 +107,11 @@ export class Controller implements UserController {
     }
     createUser(userParams: types.UserParams): Operation<types.User_DTO | undefined> {
         let result: types.User | undefined
-        let validUserParams: types.UserParams
         const validationRes = types.UserParamsSchema.safeParse(userParams)
         if (!validationRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid user")
         }
-        validUserParams = validationRes.data
+        const validUserParams: types.UserParams = validationRes.data
         const operation = types.createUserFromParams(validUserParams, this.encrypter)
         if (!operation.success || operation.data === undefined) {
             return operation
@@ -105,12 +128,11 @@ export class Controller implements UserController {
     }
     createAdmin(userParams: types.UserParams): Operation<types.User | undefined> {
         let result: types.User | undefined
-        let validUserParams: types.UserParams
         const validationRes = types.UserParamsSchema.safeParse(userParams)
         if (!validationRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid user")
         }
-        validUserParams = validationRes.data
+        const validUserParams: types.UserParams = validationRes.data
         const operation = types.createUserFromParams(validUserParams, this.encrypter, true)
         if (!operation.success || operation.data === undefined) {
             return operation
@@ -127,13 +149,12 @@ export class Controller implements UserController {
     }
     cancelUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
         let result: types.User | undefined
-        let validID: string
         let success: boolean = false
         const validationRes = types.UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid id")
         }
-        validID = validationRes.data
+        const validID = validationRes.data
         try {
             result = this.udb.getUserByID(validID)
         } catch (e) {
@@ -158,13 +179,12 @@ export class Controller implements UserController {
     }
     deleteUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
         let result: types.User | undefined
-        let validID: string
         let success: boolean = false
         const validationRes = types.UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid id")
         }
-        validID = validationRes.data
+        const validID = validationRes.data
         try {
             result = this.udb.getUserByID(validID)
         } catch (e) {
@@ -188,14 +208,13 @@ export class Controller implements UserController {
     }
     getLinkByID(id: string, forAdmin: boolean = false): Operation<types.Link_DTO | types.Link | undefined> {
         let result: types.Link | undefined
-        let validID: string
         const validationRes = types.LinkSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid id")
         }
-        validID = validationRes.data
+        const validID = validationRes.data
         try {
-            result = this.ldb.getLinkbyID(validID)
+            result = this.ldb.getLinkByID(validID)
         } catch (e) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
@@ -209,12 +228,11 @@ export class Controller implements UserController {
     }
     getLinksByUser(id: string, forAdmin: boolean = false): Operation<Array<types.Link_DTO> | Array<types.Link>> {
         let result: Array<types.Link> = []
-        let validID: string
         const validationRes = types.UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid id")
         }
-        validID = validationRes.data
+        const validID = validationRes.data
         try {
             result = this.ldb.getLinksByUser(validID)
         } catch (e) {
@@ -231,24 +249,60 @@ export class Controller implements UserController {
     createLink(url: string, userID: string, forAdmin: boolean = false): Operation<types.Link_DTO | types.Link | undefined> {
         let userResult: types.User | undefined
         let result: types.Link | undefined
-        let validID: string
-        const validationRes = types.LinkSchema.shape.userID.safeParse(userID)
+        let validationRes = types.LinkSchema.shape.userID.safeParse(userID)
         if (!validationRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid id")
         }
-        validID = validationRes.data
+        const validID = validationRes.data
+        validationRes = types.LinkSchema.shape.url.safeParse(url)
+        if (!validationRes.success) {
+            return new Operation(false, result, errorSource.validation, "invalid url")
+        }
+        const validUrl = validationRes.data
         try {
             userResult = this.udb.getUserByID(validID)
         } catch (e) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
-        if (result === undefined) {
+        if (userResult === undefined) {
+            return new Operation(false, undefined, errorSource.database, "user not found")
+        }
+        const params: types.LinkParams = {
+            url: validUrl,
+        }
+        const next = this.ldb.getLastLinkID() + 1
+        const short = this.haser.hash(next)
+        const operation = types.createLinkFromParams(params, validID, short)
+        if (!operation.success || operation.data === undefined) {
+            return operation
+        }
+        result = operation.data
+        try {
+            result = this.ldb.createLink(result)
+        } catch (e) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        result = this.ldb.getLinkByShort(short)
+        if (result === undefined) {
+            return new Operation(false, undefined, errorSource.database, "user not found")
         }
         if (forAdmin) {
             return new Operation(true, result)
         }
         return new Operation(true, types.parseLink_DTO(result))
     }
-
+    serveLink(short: string): Operation<string | undefined> {
+        const url = this.ldb.serveLink(short)
+        if (url === undefined || url === "") {
+            return new Operation(false, undefined, errorSource.database, "link not found")
+        }
+        return new Operation(true, url)
+    }
+    trackLink(short: string):Operation<boolean>{
+        const success = this.ldb.trackServe(short)
+        if (!success){
+            return new Operation(false,false,errorSource.database, "internal server error")
+        }
+        return new Operation(true,success)
+    }
 }
