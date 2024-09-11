@@ -1,6 +1,11 @@
 export class Hasher {
     base: string = "0123456789abcdefghijklmnopqrstuvwxyz"
     digits: number = 5
+    /**
+     * @default
+     * base: string = "0123456789abcdefghijklmnopqrstuvwxyz"
+     * digits: number = 5
+     * */
     constructor(base?: string, digits?: number) {
         this.base = base ?? this.base
         this.digits = Math.trunc(digits ?? this.digits)
