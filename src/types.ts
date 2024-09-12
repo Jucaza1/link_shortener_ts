@@ -30,7 +30,6 @@ export const LinkSchema = z.object({
     expiresAt: z.string().date()
 })
 export const User_DTOSchema = UserSchema.omit({
-    ID: true,
     isAdmin: true,
     deletedAt: true,
     deleted: true,
@@ -41,6 +40,16 @@ export const Link_DTOSchema = LinkSchema.omit({
     userID: true,
     deleted: true,
     deletedAt: true,
+})
+export const UserEncryptedPWSchema = UserSchema.omit({
+    ID: true,
+    isAdmin:true,
+    guest:true,
+    deletedAt:true,
+    deleted:true,
+    createdAt:true,
+    email:true,
+    username:true
 })
 export const UserParamsSchema = UserSchema.omit({
     ID: true,
@@ -69,6 +78,7 @@ export const LinkParamsSchema = LinkSchema.omit({
 })
 export type User = z.infer<typeof UserSchema>
 export type UserParams = z.infer<typeof UserParamsSchema>
+export type UserEncryptedPW = z.infer<typeof UserEncryptedPWSchema>
 export type Link = z.infer<typeof LinkSchema>
 export type LinkParams = z.infer<typeof LinkParamsSchema>
 export type User_DTO = z.infer<typeof User_DTOSchema>
@@ -76,6 +86,7 @@ export type Link_DTO = z.infer<typeof Link_DTOSchema>
 
 export function parseUser_DTO(u: User): User_DTO {
     return {
+        ID: u.ID,
         username: u.username,
         guest: u.guest,
         email: u.email,

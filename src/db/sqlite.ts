@@ -1,6 +1,6 @@
 import BetterSqlite3 from "better-sqlite3"
 import * as db from "./main.js"
-import { Link, User } from "../types.js"
+import { Link, User, UserEncryptedPW } from "../types.js"
 
 export class SqliteDB implements db.LinkDB, db.UserDB {
     database: BetterSqlite3.Database
@@ -87,6 +87,12 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         const res = this.database.prepare(`
         SELECT * FROM User WHERE ID == ?`).get(id)
         return res as User | undefined
+    }
+    getEncryptedPasswordByID(id: string): string | undefined {
+        const res = this.database.prepare(`
+        SELECT encriptedPassword FROM User WHERE ID == ?`).get(id)
+        if (res === undefined || (res as UserEncryptedPW).encriptedPassword === undefined) return undefined
+        return (res as UserEncryptedPW).encriptedPassword as string | undefined
     }
     getUserByEmail(email: string): User | undefined {
         const res = this.database.prepare(`
@@ -177,7 +183,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         `)
         this.database.exec(`
             CREATE TABLE IF NOT EXISTS Link (
-            ID INT PRIMARY KEY AUTOICREMENT,
+            ID INT PRIMARY KEY AUTOINCREMENT,
             userID UUID ,
             url TEXT NOT NULL,
             short TEXT NOT NULL,

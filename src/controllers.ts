@@ -5,6 +5,7 @@ import { Hasher } from "./hash.js";
 
 export interface UserController{
     getUserByID(id: string): Operation<types.User_DTO | undefined>
+    getEncrytpedPasswordbyID(id: string): Operation<string | undefined>
     getUserbyEmail(email: string): Operation<types.User_DTO | undefined>
     getUserbyUsername(username: string): Operation<types.User_DTO | undefined>
     createUser(userParams: types.UserParams): Operation<types.User_DTO | undefined>
@@ -57,13 +58,30 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         } catch (e) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
-        if (result == undefined) {
+        if (result === undefined) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
         if (forAdmin) {
             return new Operation(true, result)
         }
         return new Operation(true, types.parseUser_DTO(result))
+    }
+    getEncrytpedPasswordbyID(id: string): Operation<string | undefined>{
+        let result: string | undefined
+        const validationRes = types.UserSchema.shape.ID.safeParse(id)
+        if (!validationRes.success) {
+            return new Operation(false, result, errorSource.validation, "invalid id")
+        }
+        const validID = validationRes.data
+        try {
+            result = this.udb.getEncryptedPasswordByID(validID)
+        } catch (e) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        if (result === undefined) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        return new Operation(true, result)
     }
     getUserbyEmail(email: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
         let result: types.User | undefined
@@ -77,7 +95,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         } catch (e) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
-        if (result == undefined) {
+        if (result === undefined) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
         if (forAdmin) {
@@ -97,7 +115,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         } catch (e) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
-        if (result == undefined) {
+        if (result === undefined) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
         if (forAdmin) {
@@ -160,7 +178,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         } catch (e) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
-        if (result == undefined) {
+        if (result === undefined) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
         try {
@@ -190,7 +208,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         } catch (e) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
-        if (result == undefined) {
+        if (result === undefined) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
         try {
