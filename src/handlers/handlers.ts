@@ -76,7 +76,16 @@ export class AuthHandler {
                 .json(types.errorMsg("invalid credentials"))
             return
         }
-        req.
+        const operation = this.uController.getUserByID(decoded?.ID)
+        if (operation.success === false || operation.data === undefined) {
+            res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
+                .json(types.errorMsg("invalid credentials"))
+            return
+        }
+        //storing userID in res.locals.userID
+        //TODO store if user is admin
+        res.locals.userID = operation.data.ID
+        next()
     }
 }
 export class UserHandler {
