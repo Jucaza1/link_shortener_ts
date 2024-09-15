@@ -60,8 +60,8 @@ export class AuthHandler {
                 .json(types.errorMsg("incorrect credentials"))
             return
         }
-        const token = this.jwt_auther.generateToken({ID:operation.data.ID})
-        res.setHeader("X-Authorization",token).sendStatus(httpStatus.HTTP_STATUS_NO_CONTENT)
+        const token = this.jwt_auther.generateToken({ ID: operation.data.ID })
+        res.setHeader("X-Authorization", token).sendStatus(httpStatus.HTTP_STATUS_NO_CONTENT)
     }
     validateMiddleware(req: Request, res: Response, next: NextFunction) {
         const token = req.header("X-Authorization")
@@ -71,20 +71,22 @@ export class AuthHandler {
             return
         }
         const decoded = this.jwt_auther.verifyToken(token)
-        if (decoded === undefined){
+        if (decoded === undefined) {
             res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
                 .json(types.errorMsg("invalid credentials"))
             return
         }
-        const operation = this.uController.getUserByID(decoded?.ID)
+        const operation = this.uController.getUserByID(decoded?.ID, true)
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
                 .json(types.errorMsg("invalid credentials"))
             return
         }
-        //storing userID in res.locals.userID
-        //TODO store if user is admin
-        res.locals.userID = operation.data.ID
+        const user:types.User_Middleware = {
+            ID: (operation.data as types.User).ID,
+            isAdmin: (operation.data as types.User).isAdmin,
+        }
+        res.locals.user = user
         next()
     }
 }

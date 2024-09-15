@@ -1,4 +1,4 @@
-import z from "zod"
+import z, { infer } from "zod"
 import crypto from 'crypto';
 import { v4 as uuidv4 } from "uuid"
 
@@ -43,17 +43,17 @@ export const Link_DTOSchema = LinkSchema.omit({
 })
 export const UserEncryptedPWSchema = UserSchema.omit({
     ID: true,
-    isAdmin:true,
-    guest:true,
-    deletedAt:true,
-    deleted:true,
-    createdAt:true,
-    email:true,
-    username:true
+    isAdmin: true,
+    guest: true,
+    deletedAt: true,
+    deleted: true,
+    createdAt: true,
+    email: true,
+    username: true
 })
 export const UserParamsSchema = UserSchema.omit({
     ID: true,
-    isAdmin:true,
+    isAdmin: true,
     guest: true,
     deletedAt: true,
     deleted: true,
@@ -67,14 +67,14 @@ export const UserParamsSchema = UserSchema.omit({
 
 })
 export const LinkParamsSchema = LinkSchema.omit({
-    ID:true,
-    createdAt:true,
-    status:true,
-    userID:true,
+    ID: true,
+    createdAt: true,
+    status: true,
+    userID: true,
     deleted: true,
     deletedAt: true,
-    expiresAt:true,
-    short:true,
+    expiresAt: true,
+    short: true,
 })
 export type User = z.infer<typeof UserSchema>
 export type UserParams = z.infer<typeof UserParamsSchema>
@@ -83,6 +83,10 @@ export type Link = z.infer<typeof LinkSchema>
 export type LinkParams = z.infer<typeof LinkParamsSchema>
 export type User_DTO = z.infer<typeof User_DTOSchema>
 export type Link_DTO = z.infer<typeof Link_DTOSchema>
+export type User_Middleware = {
+    ID:z.infer<typeof UserSchema.shape.ID>,
+    isAdmin:z.infer<typeof UserSchema.shape.isAdmin>,
+}
 
 export function parseUser_DTO(u: User): User_DTO {
     return {
@@ -127,7 +131,7 @@ export function createUserFromParams(params: UserParams, encrypter: PasswordEncr
     }
     return new Operation(true, user)
 }
-export function createLinkFromParams(params: LinkParams, userID: string, short: string): Operation< Link | undefined >{
+export function createLinkFromParams(params: LinkParams, userID: string, short: string): Operation<Link | undefined> {
     const validationRes = LinkParamsSchema.safeParse(params)
     if (!validationRes.success) {
         return new Operation(false, undefined, errorSource.validation, "invalid user")
