@@ -3,24 +3,24 @@ import * as types from "./types.js"
 import { errorSource, Operation } from "./error.js";
 import { Hasher } from "./hash.js";
 
-export interface UserController{
-    getUserByID(id: string): Operation<types.User_DTO | undefined>
+export interface UserController {
+    getUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
     getEncrytpedPasswordbyID(id: string): Operation<string | undefined>
-    getUserbyEmail(email: string): Operation<types.User_DTO | undefined>
-    getUserbyUsername(username: string): Operation<types.User_DTO | undefined>
+    getUserbyEmail(email: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
+    getUserbyUsername(username: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
     createUser(userParams: types.UserParams): Operation<types.User_DTO | undefined>
     createAdmin(userParams: types.UserParams): Operation<types.User | undefined>
-    cancelUserByID(id: string, forAdmin: boolean): Operation<types.User_DTO | undefined>
-    deleteUserByID(id: string, forAdmin: boolean): Operation<types.User_DTO | types.User | undefined>
+    cancelUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
+    deleteUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
 }
 export interface LinkController {
-    getLinkByID(id: string, forAdmin: boolean): Operation<types.Link_DTO | types.Link | undefined>
-    getLinksByUser(id: string, forAdmin: boolean): Operation<Array<types.Link_DTO> | Array<types.Link>>
-    createLink(url: string, userID: string, forAdmin: boolean): Operation<types.Link_DTO | types.Link | undefined>
+    getLinkByID(id: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
+    getLinksByUser(id: string, forAdmin?: boolean): Operation<Array<types.Link_DTO> | Array<types.Link>>
+    createLink(url: string, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
 }
 export interface LinkServerController {
     serveLink(short: string): Operation<string | undefined>
-    trackLink(short: string):Operation<boolean>
+    trackLink(short: string): Operation<boolean>
 }
 export class ControllerImp implements UserController, LinkController, LinkServerController {
     udb: db.UserDB
@@ -46,7 +46,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         this.trackLink = this.trackLink.bind(this)
 
     }
-    getUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
+    getUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
         let result: types.User | undefined
         const validationRes = types.UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
@@ -66,7 +66,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, types.parseUser_DTO(result))
     }
-    getEncrytpedPasswordbyID(id: string): Operation<string | undefined>{
+    getEncrytpedPasswordbyID(id: string): Operation<string | undefined> {
         let result: string | undefined
         const validationRes = types.UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
@@ -83,7 +83,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, result)
     }
-    getUserbyEmail(email: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
+    getUserbyEmail(email: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
         let result: types.User | undefined
         const validationRes = types.UserSchema.shape.email.safeParse(email)
         if (!validationRes.success) {
@@ -316,11 +316,11 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, url)
     }
-    trackLink(short: string):Operation<boolean>{
+    trackLink(short: string): Operation<boolean> {
         const success = this.ldb.trackServe(short)
-        if (!success){
-            return new Operation(false,false,errorSource.database, "internal server error")
+        if (!success) {
+            return new Operation(false, false, errorSource.database, "internal server error")
         }
-        return new Operation(true,success)
+        return new Operation(true, success)
     }
 }
