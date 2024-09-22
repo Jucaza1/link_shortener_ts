@@ -13,8 +13,8 @@ export interface LinkDB {
     getLinksByUser(UserID: string): Array<types.Link>
     getLinkByID(id: number): types.Link | undefined
     createLink(link: types.Link): types.Link | undefined
-    cancelLink(id: string): boolean
-    deleteLink(id: string): boolean
+    cancelLinkByID(id: number): boolean
+    deleteLinkByID(id: number): boolean
     serveLink(short: string): string | undefined
     trackServe(short: string): boolean
     getLastLinkID(): number

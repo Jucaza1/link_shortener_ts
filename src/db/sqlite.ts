@@ -24,8 +24,8 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         this.getUserByEmail = this.getUserByEmail.bind(this)
         this.getUserByID = this.getUserByID.bind(this)
         this.serveLink = this.serveLink.bind(this)
-        this.deleteLink = this.deleteLink.bind(this)
-        this.cancelLink = this.cancelLink.bind(this)
+        this.deleteLinkByID = this.deleteLinkByID.bind(this)
+        this.cancelLinkByID = this.cancelLinkByID.bind(this)
         this.createLink = this.createLink.bind(this)
         this.getLinkByID = this.getLinkByID.bind(this)
         this.getLinkByShort = this.getLinkByShort.bind(this)
@@ -58,7 +58,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         if (info.changes < 1) return undefined
         return link
     }
-    cancelLink(id: string): boolean {
+    cancelLinkByID(id: number): boolean {
         const stmt = this.database.prepare(`
             UPDATE TABLE Link SET deleted = 1, deletedAt = ? WHERE ID == ?
             `)
@@ -69,7 +69,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         if (info.changes < 1) return false
         return true
     }
-    deleteLink(id: string): boolean {
+    deleteLinkByID(id: number): boolean {
         const stmt = this.database.prepare(`
             DELETE FROM Link WHERE ID == ?
             `)
