@@ -29,4 +29,4 @@ app.use("/api/v1", createRouter(sqliteDB, sqliteDB, hasher, encrypter
 console.log(`Running on http://localhost:${PORT}`)
 
 TestJWT()
-// app.listen(PORT)
+app.listen(PORT)

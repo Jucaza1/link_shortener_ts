@@ -40,7 +40,7 @@ export function TestJWT(){
     const token = jwt_auther.generateToken(input)
     console.log("token is")
     console.log(token)
-    const decoded = jwt_auther.verifyToken(token+"i")
+    const decoded = jwt_auther.verifyToken(token)
     console.log("decoded is")
     console.log(decoded)
     const output = {
