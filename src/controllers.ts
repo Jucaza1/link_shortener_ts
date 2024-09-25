@@ -16,7 +16,9 @@ export interface UserController {
 export interface LinkController {
     getLinkByID(id: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
     getLinksByUser(id: string, forAdmin?: boolean): Operation<Array<types.Link_DTO> | Array<types.Link>>
-    createLink(url: string, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
+    createLink(url: types.LinkParams, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
+    deleteLinkByID(id: number, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
+    cancelLinkByID(id: number, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
 }
 export interface LinkServerController {
     serveLink(short: string): Operation<string | undefined>
@@ -264,19 +266,18 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, result.map(link => types.parseLink_DTO(link)))
     }
-    createLink(url: string, userID: string, forAdmin: boolean = false): Operation<types.Link_DTO | types.Link | undefined> {
+    createLink(link: types.LinkParams, userID: string, forAdmin: boolean = false): Operation<types.Link_DTO | types.Link | undefined> {
         let userResult: types.User | undefined
         let result: types.Link | undefined
-        let validationRes = types.LinkSchema.shape.userID.safeParse(userID)
-        if (!validationRes.success) {
+        let validationUserRes = types.LinkSchema.shape.userID.safeParse(userID)
+        if (!validationUserRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid id")
         }
-        const validID = validationRes.data
-        validationRes = types.LinkSchema.shape.url.safeParse(url)
-        if (!validationRes.success) {
+        const validID = validationUserRes.data
+        let validationLinkRes = types.LinkParamsSchema.safeParse(link)
+        if (!validationLinkRes.success) {
             return new Operation(false, result, errorSource.validation, "invalid url")
         }
-        const validUrl = validationRes.data
         try {
             userResult = this.udb.getUserByID(validID)
         } catch (e) {
@@ -285,12 +286,9 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         if (userResult === undefined) {
             return new Operation(false, undefined, errorSource.database, "user not found")
         }
-        const params: types.LinkParams = {
-            url: validUrl,
-        }
         const next = this.ldb.getLastLinkID() + 1
         const short = this.haser.hash(next)
-        const operation = types.createLinkFromParams(params, validID, short)
+        const operation = types.createLinkFromParams(link, validID, short)
         if (!operation.success || operation.data === undefined) {
             return operation
         }
@@ -308,6 +306,64 @@ export class ControllerImp implements UserController, LinkController, LinkServer
             return new Operation(true, result)
         }
         return new Operation(true, types.parseLink_DTO(result))
+    }
+    deleteLinkByID(id: number, userID: string, isAdmin: boolean = false): Operation<types.Link | undefined> {
+        let result: types.Link | undefined
+        let success: boolean = false
+        const validationRes = types.LinkSchema.shape.ID.safeParse(id)
+        if (!validationRes.success) {
+            return new Operation(false, result, errorSource.validation, "invalid id")
+        }
+        const validID = validationRes.data
+        try {
+            result = this.ldb.getLinkByID(validID)
+        } catch (e) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        if (result === undefined) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        if (!isAdmin && result.userID !== userID){
+            return new Operation(false, undefined, errorSource.database, "unauthorized")
+        }
+        try {
+            success = this.ldb.deleteLinkByID(validID)
+        } catch (e) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        if (true !== success) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        return new Operation(true, result)
+    }
+    cancelLinkByID(id: number, userID: string, isAdmin: boolean = false): Operation<types.Link | undefined> {
+        let result: types.Link | undefined
+        let success: boolean = false
+        const validationRes = types.LinkSchema.shape.ID.safeParse(id)
+        if (!validationRes.success) {
+            return new Operation(false, result, errorSource.validation, "invalid id")
+        }
+        const validID = validationRes.data
+        try {
+            result = this.ldb.getLinkByID(validID)
+        } catch (e) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        if (result === undefined) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        if (!isAdmin && result.userID !== userID){
+            return new Operation(false, undefined, errorSource.database, "unauthorized")
+        }
+        try {
+            success = this.ldb.cancelLinkByID(validID)
+        } catch (e) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        if (true !== success) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        return new Operation(true, result)
     }
     serveLink(short: string): Operation<string | undefined> {
         const url = this.ldb.serveLink(short)
