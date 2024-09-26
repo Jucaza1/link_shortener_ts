@@ -82,7 +82,7 @@ export class AuthHandler {
                 .json(types.errorMsg("invalid credentials"))
             return
         }
-        const user:types.User_Middleware = {
+        const user: types.User_Middleware = {
             ID: (operation.data as types.User).ID,
             isAdmin: (operation.data as types.User).isAdmin,
         }
@@ -166,7 +166,7 @@ export class UserHandler {
                 .json(types.errorMsg(operation.msg as string))
             return
         }
-        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_CREATED).json(operation.data)
     }
     handleCreateAdmin(req: Request, res: Response) {
         const params = req.body
@@ -175,7 +175,7 @@ export class UserHandler {
             email: params.email,
             password: params.password,
         }
-        if (user === undefined) {
+        if (!user.username || !user.email || !user.password) {
             res
                 .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
                 .json(types.errorMsg("invalid id"))
@@ -183,6 +183,56 @@ export class UserHandler {
         }
         const operation = this.uController.createAdmin(user)
         if (operation.success === false || operation.data === undefined) {
+            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
+                .json(types.errorMsg(operation.msg as string))
+            return
+        }
+        res.status(httpStatus.HTTP_STATUS_CREATED).json(operation.data)
+    }
+    handleCancelUserByID(req: Request, res: Response) {
+        const id = req.params.id
+        const user: types.User_Middleware = res.locals.user
+        if (!user) {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid id"))
+            return
+        }
+        let operation: Operation<any>
+        if (!user?.isAdmin && id === user?.ID || user.isAdmin) {
+            operation = this.uController.cancelUserByID(id, user.isAdmin)
+        } else {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid id"))
+            return
+        }
+        if (!operation.success || !operation.data) {
+            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
+                .json(types.errorMsg(operation.msg as string))
+            return
+        }
+        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+    }
+    handleDeleteUserByID(req: Request, res: Response) {
+        const id = req.params.id
+        const user: types.User_Middleware = res.locals.user
+        if (!user) {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid id"))
+            return
+        }
+        let operation: Operation<any>
+        if (!user?.isAdmin && id === user?.ID || user.isAdmin) {
+            operation = this.uController.deleteUserByID(id, user.isAdmin)
+        } else {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid id"))
+            return
+        }
+        if (!operation.success || !operation.data) {
             res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
                 .json(types.errorMsg(operation.msg as string))
             return
