@@ -246,6 +246,53 @@ export class LinkHandler {
         this.linkController = linkController
         // this.handleServeLink = this.handleServeLink.bind(this)
     }
+    handleCreateLink(req: Request, res: Response) {
+        const params = req.body
+        const user: types.User_Middleware = res.locals.user
+        const link: types.LinkParams = {
+            url: params.url,
+        }
+        if (!link.url || !user) {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid id"))
+            return
+        }
+        const operation = this.linkController.createLink(link, user?.ID, user?.isAdmin)
+        if (operation.success === false || operation.data === undefined) {
+            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
+                .json(types.errorMsg(operation.msg as string))
+            return
+        }
+        res.status(httpStatus.HTTP_STATUS_CREATED).json(operation.data)
+    }
+    handleDeleteLinkByID(req: Request, res: Response) {
+        const id = req.params.id
+        const user: types.User_Middleware = res.locals.user
+        if (!user) {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid id"))
+            return
+        }
+        let operation: Operation<any>
+        const parsedID = parseInt(id)
+        if (!isNaN(parsedID)) {
+            operation = this.linkController.deleteLinkByID(parsedID, user.ID,user.isAdmin)
+        } else {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid id"))
+            return
+        }
+        if (!operation.success || !operation.data) {
+            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
+                .json(types.errorMsg(operation.msg as string))
+            return
+        }
+        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+    }
+
 }
 export class LSHandler {
     linkSController: LinkServerController
