@@ -292,6 +292,32 @@ export class LinkHandler {
         }
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
+    handleCancelLinkByID(req: Request, res: Response) {
+        const id = req.params.id
+        const user: types.User_Middleware = res.locals.user
+        if (!user) {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid id"))
+            return
+        }
+        let operation: Operation<any>
+        const parsedID = parseInt(id)
+        if (!isNaN(parsedID)) {
+            operation = this.linkController.cancelLinkByID(parsedID, user.ID,user.isAdmin)
+        } else {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid id"))
+            return
+        }
+        if (!operation.success || !operation.data) {
+            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
+                .json(types.errorMsg(operation.msg as string))
+            return
+        }
+        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+    }
 
 }
 export class LSHandler {
