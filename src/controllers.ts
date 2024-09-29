@@ -5,9 +5,9 @@ import { Hasher } from "./hash.js";
 
 export interface UserController {
     getUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
-    getEncrytpedPasswordbyID(id: string): Operation<string | undefined>
-    getUserbyEmail(email: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
-    getUserbyUsername(username: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
+    getEncrytpedPasswordByID(id: string): Operation<string | undefined>
+    getUserByEmail(email: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
+    getUserByUsername(username: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
     createUser(userParams: types.UserParams): Operation<types.User_DTO | undefined>
     createAdmin(userParams: types.UserParams): Operation<types.User | undefined>
     cancelUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
@@ -35,8 +35,8 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         this.haser = hasher
         this.encrypter = encrypter
         this.getUserByID = this.getUserByID.bind(this)
-        this.getUserbyEmail = this.getUserbyEmail.bind(this)
-        this.getUserbyUsername = this.getUserbyUsername.bind(this)
+        this.getUserByEmail = this.getUserByEmail.bind(this)
+        this.getUserByUsername = this.getUserByUsername.bind(this)
         this.createUser = this.createUser.bind(this)
         this.createAdmin = this.createAdmin.bind(this)
         this.cancelUserByID = this.cancelUserByID.bind(this)
@@ -68,7 +68,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, types.parseUser_DTO(result))
     }
-    getEncrytpedPasswordbyID(id: string): Operation<string | undefined> {
+    getEncrytpedPasswordByID(id: string): Operation<string | undefined> {
         let result: string | undefined
         const validationRes = types.UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
@@ -85,7 +85,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, result)
     }
-    getUserbyEmail(email: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
+    getUserByEmail(email: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
         let result: types.User | undefined
         const validationRes = types.UserSchema.shape.email.safeParse(email)
         if (!validationRes.success) {
@@ -105,7 +105,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, types.parseUser_DTO(result))
     }
-    getUserbyUsername(username: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
+    getUserByUsername(username: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
         let result: types.User | undefined
         const validationRes = types.UserSchema.shape.username.safeParse(username)
         if (!validationRes.success) {

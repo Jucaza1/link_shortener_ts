@@ -37,7 +37,6 @@ export const User_DTOSchema = UserSchema.omit({
 })
 export const Link_DTOSchema = LinkSchema.omit({
     ID: true,
-    userID: true,
     deleted: true,
     deletedAt: true,
 })
@@ -99,6 +98,7 @@ export function parseUser_DTO(u: User): User_DTO {
 }
 export function parseLink_DTO(l: Link): Link_DTO {
     return {
+        userID: l.userID,
         url: l.url,
         short: l.short,
         status: l.status,

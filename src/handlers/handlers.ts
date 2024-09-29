@@ -34,21 +34,21 @@ export class AuthHandler {
             password: req.body.password,
         }
         if (user.username !== undefined) {
-            operation = this.uController.getUserbyUsername(user.username)
+            operation = this.uController.getUserByUsername(user.username)
         } else {
             if (user.email === undefined) {
                 res.status(httpStatus.HTTP_STATUS_BAD_REQUEST)
                     .json(types.errorMsg("invalid credentials"))
                 return
             }
-            operation = this.uController.getUserbyEmail(user.email)
+            operation = this.uController.getUserByEmail(user.email)
         }
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
                 .json(types.errorMsg("incorrect credentials"))
             return
         }
-        const operation2 = this.uController.getEncrytpedPasswordbyID(operation.data.ID)
+        const operation2 = this.uController.getEncrytpedPasswordByID(operation.data.ID)
         if (operation2.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
                 .json(types.errorMsg("incorrect credentials"))
@@ -122,7 +122,7 @@ export class UserHandler {
                 .json(types.errorMsg("invalid id"))
             return
         }
-        const operation = this.uController.getUserbyEmail(email as string)
+        const operation = this.uController.getUserByEmail(email as string)
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
                 .json(types.errorMsg(operation.msg as string))
@@ -139,7 +139,7 @@ export class UserHandler {
                 .json(types.errorMsg("invalid id"))
             return
         }
-        const operation = this.uController.getUserbyUsername(username as string)
+        const operation = this.uController.getUserByUsername(username as string)
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
                 .json(types.errorMsg(operation.msg as string))
@@ -278,7 +278,7 @@ export class LinkHandler {
         let operation: Operation<any>
         const parsedID = parseInt(id)
         if (!isNaN(parsedID)) {
-            operation = this.linkController.deleteLinkByID(parsedID, user.ID,user.isAdmin)
+            operation = this.linkController.deleteLinkByID(parsedID, user.ID, user.isAdmin)
         } else {
             res
                 .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
@@ -298,19 +298,61 @@ export class LinkHandler {
         if (!user) {
             res
                 .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+                .json(types.errorMsg("invalid user id"))
             return
         }
         let operation: Operation<any>
         const parsedID = parseInt(id)
         if (!isNaN(parsedID)) {
-            operation = this.linkController.cancelLinkByID(parsedID, user.ID,user.isAdmin)
+            operation = this.linkController.cancelLinkByID(parsedID, user.ID, user.isAdmin)
         } else {
             res
                 .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
                 .json(types.errorMsg("invalid id"))
             return
         }
+        if (!operation.success || !operation.data) {
+            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
+                .json(types.errorMsg(operation.msg as string))
+            return
+        }
+        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+    }
+    handleGetLinkById(req: Request, res: Response) {
+        const id: string = req.params.id
+        const user: types.User_Middleware = res.locals.user
+        if (!user) {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid user id"))
+        }
+        const operation = this.linkController.getLinkByID(id, user.isAdmin)
+        if (!operation.success || !operation.data) {
+            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
+                .json(types.errorMsg(operation.msg as string))
+            return
+        }
+        if(!user.isAdmin && operation.data.userID !== user.ID){
+            res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
+                .json(types.errorMsg("unauthorized"))
+            return
+        }
+        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+    }
+    handleGetLinksByUser(req: Request, res: Response) {
+        const id: string = req.params.id
+        const user: types.User_Middleware = res.locals.user
+        if (!user) {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid user id"))
+        }
+        if(!user.isAdmin && id !== user.ID){
+            res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
+                .json(types.errorMsg("unauthorized"))
+            return
+        }
+        const operation = this.linkController.getLinksByUser(id, user.isAdmin)
         if (!operation.success || !operation.data) {
             res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
                 .json(types.errorMsg(operation.msg as string))
