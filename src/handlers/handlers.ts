@@ -2,15 +2,15 @@ import { NextFunction, Request, Response } from "express"
 import { constants as httpStatus } from "http2"
 import * as types from "../types.js"
 import { UserController, LinkServerController, LinkController } from "../controllers.js"
-import { JWT_Auther } from "../middlewate.js"
+import { Auther } from "../middleware.js"
 import { Operation } from "../error.js"
 
 export class AuthHandler {
-    jwt_auther: JWT_Auther
+    auther: Auther
     uController: UserController
     encrypter: types.PasswordEncrypter
-    constructor(jwt_auther: JWT_Auther, uController: UserController, encrypter: types.PasswordEncrypter) {
-        this.jwt_auther = jwt_auther
+    constructor(auther: Auther, uController: UserController, encrypter: types.PasswordEncrypter) {
+        this.auther = auther
         this.uController = uController
         this.encrypter = encrypter
         this.authenticate = this.authenticate.bind(this)
@@ -60,7 +60,7 @@ export class AuthHandler {
                 .json(types.errorMsg("incorrect credentials"))
             return
         }
-        const token = this.jwt_auther.generateToken({ ID: operation.data.ID })
+        const token = this.auther.generateToken({ ID: operation.data.ID })
         res.setHeader("X-Authorization", token).sendStatus(httpStatus.HTTP_STATUS_NO_CONTENT)
     }
     validateMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -70,7 +70,7 @@ export class AuthHandler {
                 .json(types.errorMsg("invalid credentials"))
             return
         }
-        const decoded = this.jwt_auther.verifyToken(token)
+        const decoded = this.auther.verifyToken(token)
         if (decoded === undefined) {
             res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
                 .json(types.errorMsg("invalid credentials"))

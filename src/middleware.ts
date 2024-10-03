@@ -1,6 +1,12 @@
 import jwt from 'jsonwebtoken'
 
-export class JWT_Auther {
+export interface Auther {
+    generateToken(input: any): string,
+    verifyToken(token: string): undefined | any,
+
+}
+
+export class JWT_Auther implements Auther {
     private secret: string
     constructor(secret: string) {
         this.secret = secret ?? "defaultsecret"
@@ -14,7 +20,7 @@ export class JWT_Auther {
     }
     verifyToken(token: string): undefined | any {
         let decoded: jwt.JwtPayload | string
-        if (token === undefined || token === ""){
+        if (token === undefined || token === "") {
             return undefined
         }
         try {
@@ -25,17 +31,17 @@ export class JWT_Auther {
         if (typeof decoded === "string" || decoded === undefined) {
             return undefined
         }
-        if (decoded.exp === undefined || decoded.exp*1000 < Date.now()) {
+        if (decoded.exp === undefined || decoded.exp * 1000 < Date.now()) {
             return undefined
         }
         return decoded
     }
 }
-export function TestJWT(){
+export function TestJWT() {
     const jwt_auther = new JWT_Auther("secrettest")
     const input = {
-        user : "testuser",
-        password : "testpassword"
+        user: "testuser",
+        password: "testpassword"
     }
     const token = jwt_auther.generateToken(input)
     console.log("token is")
@@ -48,7 +54,7 @@ export function TestJWT(){
         password: decoded.password
     }
     let success = false
-    if (output.user === input.user && output.password === input .password) success = true
+    if (output.user === input.user && output.password === input.password) success = true
     console.log(`output === input -> ${success}`)
 
 }
