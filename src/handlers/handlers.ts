@@ -95,6 +95,12 @@ export class UserHandler {
     constructor(uController: UserController) {
         this.uController = uController
         this.handleGetUserByID = this.handleGetUserByID.bind(this)
+        this.handleGetUserByEmail = this.handleGetUserByEmail.bind(this)
+        this.handleGetUserByUsername = this.handleGetUserByUsername.bind(this)
+        this.handleCreateUser = this.handleCreateUser.bind(this)
+        this.handleCreateAdmin = this.handleCreateAdmin.bind(this)
+        this.handleCancelUserByID = this.handleCancelUserByID.bind(this)
+        this.handleDeleteUserByID = this.handleDeleteUserByID.bind(this)
     }
     handleGetUserByID(req: Request, res: Response) {
         const params = req.params
@@ -114,8 +120,7 @@ export class UserHandler {
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
     handleGetUserByEmail(req: Request, res: Response) {
-        const params = req.body
-        const email = params.email
+        const email = req.body.email
         if (email === undefined || (typeof email) !== "string" || email === "") {
             res
                 .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
@@ -131,8 +136,7 @@ export class UserHandler {
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
     handleGetUserByUsername(req: Request, res: Response) {
-        const params = req.body
-        const username = params.username
+        const username = req.params.username
         if (username === undefined || (typeof username) !== "string" || username === "") {
             res
                 .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
@@ -244,7 +248,11 @@ export class LinkHandler {
     linkController: LinkController
     constructor(linkController: LinkController) {
         this.linkController = linkController
-        // this.handleServeLink = this.handleServeLink.bind(this)
+        this.handleCreateLink = this.handleCreateLink.bind(this)
+        this.handleDeleteLinkByID = this.handleDeleteLinkByID.bind(this)
+        this.handleCancelLinkByID = this.handleCancelLinkByID.bind(this)
+        this.handleGetLinkById = this.handleGetLinkById.bind(this)
+        this.handleGetLinksByUser = this.handleGetLinksByUser.bind(this)
     }
     handleCreateLink(req: Request, res: Response) {
         const params = req.body

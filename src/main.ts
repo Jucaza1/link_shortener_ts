@@ -3,17 +3,18 @@ import express from "express"
 import { createRouter } from "./routes.js"
 import * as db from "./db/sqlite.js"
 // import { Hasher } from "./hash.js"
-import { TestJWT } from "./middlewate.js"
+import { JWT_Auther, TestJWT } from "./middleware.js"
 import { Hasher } from "./hash.js"
 import { PasswordEncrypter } from "./types.js"
 
 const PORT = 3000
 const dbloc = "./shortener.db"
+const secret = "12345abcde"
 
 const sqliteDB = new db.SqliteDB(dbloc)
-//TODO express Handlers and connect to controllers
 const hasher = new Hasher()
 const encrypter = new PasswordEncrypter("secretforpassword")
+const auther = new JWT_Auther(secret)
 const app = express()
 app.disable('x-powered-by')
 app.get("/root", (_req, res) => {
@@ -21,7 +22,7 @@ app.get("/root", (_req, res) => {
 })
 // app.use("/", createLinkServer(sqliteDB))
 
-app.use("/api/v1", createRouter(sqliteDB, sqliteDB, hasher, encrypter
+app.use("/api/v1", createRouter(sqliteDB, sqliteDB, hasher, encrypter,auther
     // sqliteDB,
     // hasher
 ))
