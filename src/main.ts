@@ -2,11 +2,11 @@ import express from "express"
 
 import { createRouter } from "./routes.js"
 import * as db from "./db/sqlite.js"
-// import { Hasher } from "./hash.js"
 import { JWT_Auther, TestJWT } from "./middleware.js"
 import { Hasher } from "./hash.js"
 import { PasswordEncrypter } from "./types.js"
 
+//TODO: handle config with ENV vars
 const PORT = 3000
 const dbloc = "./shortener.db"
 const secret = "12345abcde"
