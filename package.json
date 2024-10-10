@@ -4,6 +4,7 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
+        "script": "npm run build && node ./build/scripts/script_populate_db.js",
         "build": "tsc",
         "dev": "npm run build && node ./build/main.js",
         "debug": "npm run build && node --inspect ./build/main.js",
