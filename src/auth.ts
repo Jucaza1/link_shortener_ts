@@ -41,20 +41,38 @@ export function TestJWT() {
     const jwt_auther = new JWT_Auther("secrettest")
     const input = {
         user: "testuser",
-        password: "testpassword"
+    }
+    const input2 = {
+        user: "testuser2",
     }
     const token = jwt_auther.generateToken(input)
     console.log("token is")
     console.log(token)
+    const token2 = jwt_auther.generateToken(input2)
+    console.log("token2 is")
+    console.log(token2)
     const decoded = jwt_auther.verifyToken(token)
-    console.log("decoded is")
+    console.log("decoded2 is")
     console.log(decoded)
     const output = {
         user: decoded.user,
         password: decoded.password
     }
+    const decoded2 = jwt_auther.verifyToken(token2)
+    console.log("decoded2 is")
+    console.log(decoded2)
+    const output2 = {
+        user: decoded2.user,
+        password: decoded2.password
+    }
     let success = false
-    if (output.user === input.user && output.password === input.password) success = true
+    if (output.user === input.user) success = true
     console.log(`output === input -> ${success}`)
+    success = false
+    if (output2.user === input2.user) success = true
+    console.log(`output2 === input2 -> ${success}`)
+    success = false
+    if (output.user !== output2.user) success = true
+    console.log(`output !== output2 -> ${success}`)
 
 }

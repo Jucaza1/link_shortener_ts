@@ -1,10 +1,13 @@
-import { Router, Request, Response, json } from "express"
-import { AuthHandler, LinkHandler, UserHandler, } from "./handlers/handlers.js"
+import { Router } from "express"
+
+import { LinkHandler, UserHandler, } from "./handlers/handlers.js"
+import { adminMiddleware, AuthHandler } from "./handlers/middlewares.js"
 import * as db from "./db/main.js"
 import { ControllerImp, } from "./controllers.js"
 import { Hasher } from "./hash.js"
 import { PasswordEncrypter } from "./types.js"
-import { Auther } from "./middleware.js"
+import { Auther } from "./auth.js"
+
 export function createRouter(
     udb: db.UserDB,
     ldb: db.LinkDB,

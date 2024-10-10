@@ -1,99 +1,14 @@
-import { NextFunction, Request, Response } from "express"
+import { Request, Response } from "express"
 import { constants as httpStatus } from "http2"
 import * as types from "../types.js"
 import { UserController, LinkServerController, LinkController } from "../controllers.js"
-import { Auther } from "../middleware.js"
 import { Operation } from "../error.js"
 
-export class AuthHandler {
-    auther: Auther
-    uController: UserController
-    encrypter: types.PasswordEncrypter
-    constructor(auther: Auther, uController: UserController, encrypter: types.PasswordEncrypter) {
-        this.auther = auther
-        this.uController = uController
-        this.encrypter = encrypter
-        this.authenticate = this.authenticate.bind(this)
-        this.validateMiddleware = this.validateMiddleware.bind(this)
-    }
-    authenticate(req: Request, res: Response) {
-        let operation: Operation<types.User_DTO | undefined>
-        if (req.body === undefined) {
-            res.status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid credentials"))
-            return
-        }
-        if (req.body.password === undefined) {
-            res.status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid credentials"))
-            return
-        }
-        const user = {
-            username: req.body.username,
-            email: req.body.email,
-            password: req.body.password,
-        }
-        if (user.username !== undefined) {
-            operation = this.uController.getUserByUsername(user.username)
-        } else {
-            if (user.email === undefined) {
-                res.status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                    .json(types.errorMsg("invalid credentials"))
-                return
-            }
-            operation = this.uController.getUserByEmail(user.email)
-        }
-        if (operation.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
-                .json(types.errorMsg("incorrect credentials"))
-            return
-        }
-        const operation2 = this.uController.getEncrytpedPasswordByID(operation.data.ID)
-        if (operation2.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
-                .json(types.errorMsg("incorrect credentials"))
-            return
-        }
-        const encryptedPW = this.encrypter.encrytp(user.password)
-        if (operation2.data !== encryptedPW) {
-            res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
-                .json(types.errorMsg("incorrect credentials"))
-            return
-        }
-        const token = this.auther.generateToken({ ID: operation.data.ID })
-        res.setHeader("X-Authorization", token).sendStatus(httpStatus.HTTP_STATUS_NO_CONTENT)
-    }
-    validateMiddleware(req: Request, res: Response, next: NextFunction) {
-        const token = req.header("X-Authorization")
-        if (typeof token !== "string" || token === "") {
-            res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
-                .json(types.errorMsg("invalid credentials"))
-            return
-        }
-        const decoded = this.auther.verifyToken(token)
-        if (decoded === undefined) {
-            res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
-                .json(types.errorMsg("invalid credentials"))
-            return
-        }
-        const operation = this.uController.getUserByID(decoded?.ID, true)
-        if (operation.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
-                .json(types.errorMsg("invalid credentials"))
-            return
-        }
-        const user: types.User_Middleware = {
-            ID: (operation.data as types.User).ID,
-            isAdmin: (operation.data as types.User).isAdmin,
-        }
-        res.locals.user = user
-        next()
-    }
-}
 export class UserHandler {
     uController: UserController
     constructor(uController: UserController) {
         this.uController = uController
+        this.handleGetUsers = this.handleGetUsers.bind(this)
         this.handleGetUserByID = this.handleGetUserByID.bind(this)
         this.handleGetUserByEmail = this.handleGetUserByEmail.bind(this)
         this.handleGetUserByUsername = this.handleGetUserByUsername.bind(this)
@@ -101,6 +16,16 @@ export class UserHandler {
         this.handleCreateAdmin = this.handleCreateAdmin.bind(this)
         this.handleCancelUserByID = this.handleCancelUserByID.bind(this)
         this.handleDeleteUserByID = this.handleDeleteUserByID.bind(this)
+    }
+    handleGetUsers(_req: Request, res: Response) {
+        const operation = this.uController.getUsers()
+        if (!operation.success || !operation.data) {
+            res
+                .status(httpStatus.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+                .json(types.errorMsg(operation.msg as string))
+            return
+        }
+        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
     handleGetUserByID(req: Request, res: Response) {
         const params = req.params
@@ -158,10 +83,12 @@ export class UserHandler {
             email: params.email,
             password: params.password,
         }
-        if (user === undefined) {
+        if (!user.username || user.username === "" ||
+            !user.email || user.email === "" ||
+            !user.password || user.password === "") {
             res
                 .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+                .json(types.errorMsg("invalid params"))
             return
         }
         const operation = this.uController.createUser(user)
@@ -340,7 +267,7 @@ export class LinkHandler {
                 .json(types.errorMsg(operation.msg as string))
             return
         }
-        if(!user.isAdmin && operation.data.userID !== user.ID){
+        if (!user.isAdmin && operation.data.userID !== user.ID) {
             res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
                 .json(types.errorMsg("unauthorized"))
             return
@@ -355,7 +282,7 @@ export class LinkHandler {
                 .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
                 .json(types.errorMsg("invalid user id"))
         }
-        if(!user.isAdmin && id !== user.ID){
+        if (!user.isAdmin && id !== user.ID) {
             res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
                 .json(types.errorMsg("unauthorized"))
             return
