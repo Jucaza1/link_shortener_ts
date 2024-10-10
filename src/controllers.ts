@@ -4,6 +4,7 @@ import { errorSource, Operation } from "./error.js";
 import { Hasher } from "./hash.js";
 
 export interface UserController {
+    getUsers(): Operation<Array<types.User> | undefined>
     getUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
     getEncrytpedPasswordByID(id: string): Operation<string | undefined>
     getUserByEmail(email: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
@@ -34,6 +35,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         this.ldb = ldb
         this.haser = hasher
         this.encrypter = encrypter
+        this.getUsers = this.getUsers.bind(this)
         this.getUserByID = this.getUserByID.bind(this)
         this.getUserByEmail = this.getUserByEmail.bind(this)
         this.getUserByUsername = this.getUserByUsername.bind(this)
@@ -47,6 +49,14 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         this.serveLink = this.serveLink.bind(this)
         this.trackLink = this.trackLink.bind(this)
 
+    }
+    getUsers(): Operation<Array<types.User> | undefined> {
+        let result: Array<types.User> | undefined
+        result = this.udb.getUsers()
+        if (!result){
+            return new Operation(false,undefined,errorSource.database, "internal server error")
+        }
+        return new Operation(true,result)
     }
     getUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
         let result: types.User | undefined
@@ -323,7 +333,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         if (result === undefined) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
-        if (!isAdmin && result.userID !== userID){
+        if (!isAdmin && result.userID !== userID) {
             return new Operation(false, undefined, errorSource.database, "unauthorized")
         }
         try {
@@ -352,7 +362,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         if (result === undefined) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }
-        if (!isAdmin && result.userID !== userID){
+        if (!isAdmin && result.userID !== userID) {
             return new Operation(false, undefined, errorSource.database, "unauthorized")
         }
         try {

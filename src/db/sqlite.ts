@@ -30,6 +30,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         this.getLinkByID = this.getLinkByID.bind(this)
         this.getLinkByShort = this.getLinkByShort.bind(this)
         this.getLinksByUser = this.getLinksByUser.bind(this)
+        this.getUsers = this.getUsers.bind(this)
         this.init()
     }
     getLinksByUser(UserID: string): Array<Link> {
@@ -82,6 +83,11 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         const res = this.database.prepare(`
         SELECT url FROM Link WHERE short == ?`).get(short)
         return res as string | undefined
+    }
+    getUsers(): Array<User> {
+        const res = this.database.prepare(`
+        SELECT * FROM User`).all()
+        return res as Array<User>
     }
     getUserByID(id: string): User | undefined {
         const res = this.database.prepare(`
@@ -183,7 +189,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         `)
         this.database.exec(`
             CREATE TABLE IF NOT EXISTS Link (
-            ID INT PRIMARY KEY AUTOINCREMENT,
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
             userID UUID ,
             url TEXT NOT NULL,
             short TEXT NOT NULL,
