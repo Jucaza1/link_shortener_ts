@@ -23,12 +23,13 @@ app.get("/root", (_req, res) => {
 })
 // app.use("/", createLinkServer(sqliteDB))
 
-app.use("/api/v1", createRouter(sqliteDB, sqliteDB, hasher, encrypter,auther
-    // sqliteDB,
-    // hasher
-))
-
+app.use("/api/v1",express.json(), logBody, createRouter(sqliteDB, sqliteDB, hasher, encrypter, auther))
+function logBody(req: express.Request, _res: express.Response, next: express.NextFunction) {
+    console.log("recieved json body:")
+    console.log(stringify(req.body))
+    next()
+}
 console.log(`Running on http://localhost:${PORT}`)
 
-TestJWT()
+// TestJWT()
 app.listen(PORT)

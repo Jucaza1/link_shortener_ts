@@ -1,6 +1,7 @@
 import * as types from "../types.js"
 
 export interface UserDB {
+    getUsers(): Array<types.User>
     getUserByID(id: string): types.User | undefined
     getEncryptedPasswordByID(id: string): string | undefined
     getUserByEmail(email: string): types.User | undefined
