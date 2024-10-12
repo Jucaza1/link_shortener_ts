@@ -36,13 +36,20 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         this.init()
     }
     getLinksByUser(UserID: string): Array<Link> {
-        let result: Array<Link> = []
         const res = this.database.prepare(`
         SELECT * FROM Link WHERE userID == ?`).all(UserID)
-        if (res !== undefined) {
-            result = { ...result, ...(res as Array<Link>) }
+        if (res === undefined) {
+            return []
         }
-        return result
+        if ((res as Array<Link>).length === 0) {
+            return []
+        }
+        let linkRes = res as Array<Link>
+        for (let l of linkRes) {
+            l.status = l.status == true
+            l.deleted = l.deleted == true
+        }
+        return linkRes
     }
     getLinkByID(id: number): Link | undefined {
         const res = this.database.prepare(`
@@ -89,12 +96,31 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     getUsers(): Array<User> {
         const res = this.database.prepare(`
         SELECT * FROM User`).all()
-        return res as Array<User>
+        if (res === undefined) {
+            return []
+        }
+        if ((res as Array<User>).length === 0) {
+            return []
+        }
+        let userRes = res as Array<User>
+        for (let u of userRes) {
+            u.isAdmin = u.isAdmin == true
+            u.deleted = u.deleted == true
+            u.guest = u.guest == true
+        }
+        return userRes
     }
     getUserByID(id: string): User | undefined {
         const res = this.database.prepare(`
         SELECT * FROM User WHERE ID == ?`).get(id)
-        return res as User | undefined
+        if (res === undefined) {
+            return undefined
+        }
+        let userRes = res as User
+        userRes.isAdmin = userRes.isAdmin == true
+        userRes.deleted = userRes.deleted == true
+        userRes.guest = userRes.guest == true
+        return userRes
     }
     getEncryptedPasswordByID(id: string): string | undefined {
         const res = this.database.prepare(`
@@ -105,21 +131,36 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     getUserByEmail(email: string): User | undefined {
         const res = this.database.prepare(`
         SELECT * FROM User WHERE email == ?`).get(email)
-        return res as User | undefined
+        if (res === undefined) {
+            return undefined
+        }
+        let userRes = res as User
+        userRes.isAdmin = userRes.isAdmin == true
+        userRes.deleted = userRes.deleted == true
+        userRes.guest = userRes.guest == true
+        return userRes
     }
     getUserByUsername(username: string): User | undefined {
         const res = this.database.prepare(`
         SELECT * FROM User WHERE username == ?`).get(username)
-        return res as User | undefined
+        if (res === undefined) {
+            return undefined
+        }
+        let userRes = res as User
+        userRes.isAdmin = userRes.isAdmin == true
+        userRes.deleted = userRes.deleted == true
+        userRes.guest = userRes.guest == true
+        return userRes
     }
     createUser(user: User): User | undefined {
         const stmt = this.database.prepare(`
             INSERT INTO User (ID, guest, username, email, deleted,
-            createdAt, deletedAt, encriptedPassword)
-            VALUES (?,?,?,?,?,?,?,?)
+            createdAt, deletedAt, encriptedPassword, isAdmin)
+            VALUES (?,?,?,?,?,?,?,?,?)
             `)
-        const info = stmt.run(user.ID, user.guest, user.username, user.email,
-            user.deleted, user.createdAt, user.deletedAt, user.encriptedPassword)
+        const info = stmt.run(user.ID, user.guest ? 1 : 0, user.username, user.email,
+            user.deleted ? 1 : 0, user.createdAt, user.deletedAt, user.encriptedPassword,
+            user.isAdmin ? 1 : 0)
         if (info === undefined) return undefined
         if (info.changes < 1) return undefined
         return user
@@ -172,7 +213,14 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     getLinkByShort(short: string): Link | undefined {
         const res = this.database.prepare(`
         SELECT ID FROM Link WHERE short == ?`).get(short)
-        return res as Link | undefined
+        if (res === undefined) {
+            return undefined
+        }
+        let linkRes = res as Link
+        linkRes.status = linkRes.status == true
+        linkRes.deleted = linkRes.deleted == true
+        return linkRes
+    }
     teardown() {
         try {
             this.database.exec('DELETE FROM User; DELETE FROM Link; DELETE FROM TrackLink;')
@@ -194,7 +242,8 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
 
     private init() {
-        this.database.pragma('journal_mode = WAL');
+        this.database.pragma('foreign_keys = ON')
+        this.database.pragma('journal_mode = WAL')
         this.database.exec(`
             CREATE TABLE IF NOT EXISTS User (
             ID UUID PRIMARY KEY,
