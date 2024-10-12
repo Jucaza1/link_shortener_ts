@@ -9,6 +9,7 @@ export interface UserDB {
     createUser(user : types.User) : types.User | undefined
     cancelUserByID(id: string): boolean
     deleteUserByID(id: string): boolean
+    teardown():void
 }
 export interface LinkDB {
     getLinksByUser(UserID: string): Array<types.Link>
@@ -20,5 +21,6 @@ export interface LinkDB {
     trackServe(short: string): boolean
     getLastLinkID(): number
     getLinkByShort(short: string):types.Link | undefined
+    teardown():void
     //
 }

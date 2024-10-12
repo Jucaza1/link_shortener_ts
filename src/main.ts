@@ -10,7 +10,9 @@ import { stringify } from "querystring"
 //TODO: handle config with ENV vars
 const PORT = 3000
 const dbloc = "./shortener.db"
-const secret = "12345abcde"
+const secret = "12345abcde";
+
+(new db.SqliteDB(dbloc)).teardown()
 
 const sqliteDB = new db.SqliteDB(dbloc)
 const hasher = new Hasher()
@@ -23,7 +25,7 @@ app.get("/root", (_req, res) => {
 })
 // app.use("/", createLinkServer(sqliteDB))
 
-app.use("/api/v1",express.json(), logBody, createRouter(sqliteDB, sqliteDB, hasher, encrypter, auther))
+app.use("/api/v1", express.json(), logBody, createRouter(sqliteDB, sqliteDB, hasher, encrypter, auther))
 function logBody(req: express.Request, _res: express.Response, next: express.NextFunction) {
     console.log("recieved json body:")
     console.log(stringify(req.body))

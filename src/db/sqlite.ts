@@ -1,6 +1,7 @@
 import BetterSqlite3 from "better-sqlite3"
 import * as db from "./main.js"
 import { Link, User, UserEncryptedPW } from "../types.js"
+import { existsSync, unlinkSync } from "fs"
 
 export class SqliteDB implements db.LinkDB, db.UserDB {
     database: BetterSqlite3.Database
@@ -31,6 +32,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         this.getLinkByShort = this.getLinkByShort.bind(this)
         this.getLinksByUser = this.getLinksByUser.bind(this)
         this.getUsers = this.getUsers.bind(this)
+        this.teardown = this.teardown.bind(this)
         this.init()
     }
     getLinksByUser(UserID: string): Array<Link> {
@@ -171,7 +173,26 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         const res = this.database.prepare(`
         SELECT ID FROM Link WHERE short == ?`).get(short)
         return res as Link | undefined
+    teardown() {
+        try {
+            this.database.exec('DELETE FROM User; DELETE FROM Link; DELETE FROM TrackLink;')
+        } catch (err) {
+            console.error('error deleting tables:', err);
+            return
+        }
+        this.database.close()
+        if (existsSync(this.location)) {
+            try {
+                unlinkSync(this.location);
+                console.log('database cleaned up.');
+
+            } catch (err) {
+                console.error('error deleting db file:', err);
+                return
+            }
+        }
     }
+
     private init() {
         this.database.pragma('journal_mode = WAL');
         this.database.exec(`
