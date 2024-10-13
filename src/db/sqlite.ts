@@ -70,7 +70,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
     cancelLinkByID(id: number): boolean {
         const stmt = this.database.prepare(`
-            UPDATE TABLE Link SET deleted = 1, deletedAt = ? WHERE ID == ?
+            UPDATE Link SET deleted = 1, deletedAt = ? WHERE ID == ?
             `)
         const deletedAt: Link["deletedAt"] = (new Date(Date.now()))
             .toISOString().split('T')[0]
@@ -167,7 +167,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
     cancelUserByID(id: string): boolean {
         const stmt = this.database.prepare(`
-            UPDATE TABLE User SET deleted = 1, deletedAt = ? WHERE ID == ?
+            UPDATE User SET deleted = 1, deletedAt = ? WHERE ID == ?
             `)
         const deletedAt: User["deletedAt"] = (new Date(Date.now()))
             .toISOString().split('T')[0]
@@ -187,7 +187,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
     trackServe(short: string): boolean {
         let stmt = this.database.prepare(`
-            UPDATE TABLE TrackLink SET activity = activity + 1 WHERE short == ?
+            UPDATE TrackLink SET activity = activity + 1 WHERE short == ?
             `)
         let info = stmt.run(short)
         if (info !== undefined && info.changes > 0) return true
