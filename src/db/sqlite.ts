@@ -1,6 +1,6 @@
 import BetterSqlite3 from "better-sqlite3"
 import * as db from "./main.js"
-import { Link, User, UserEncryptedPW } from "../types.js"
+import { Link, LinkParams, User, UserEncryptedPW } from "../types.js"
 import { existsSync, unlinkSync } from "fs"
 
 export class SqliteDB implements db.LinkDB, db.UserDB {
@@ -54,7 +54,13 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     getLinkByID(id: number): Link | undefined {
         const res = this.database.prepare(`
         SELECT * FROM Link WHERE ID == ?`).get(id)
-        return res as Link | undefined
+        if (res === undefined) {
+            return undefined
+        }
+        let linkRes = res as Link
+        linkRes.status = linkRes.status == true
+        linkRes.deleted = linkRes.deleted == true
+        return linkRes
     }
     createLink(link: Link): Link | undefined {
         const stmt = this.database.prepare(`
@@ -63,9 +69,10 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
             VALUES (?,?,?,?,?,?,?,?)
             `)
         const info = stmt.run(link.userID, link.url, link.short,
-            link.status, link.deleted, link.createdAt, link.deletedAt, link.expiresAt)
+            link.status ? 1 : 0, link.deleted ? 1 : 0, link.createdAt, link.deletedAt, link.expiresAt)
         if (info === undefined) return undefined
         if (info.changes < 1) return undefined
+        link.ID = info.lastInsertRowid as number
         return link
     }
     cancelLinkByID(id: number): boolean {
@@ -91,7 +98,11 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     serveLink(short: string): string | undefined {
         const res = this.database.prepare(`
         SELECT url FROM Link WHERE short == ?`).get(short)
-        return res as string | undefined
+        if (res === undefined) {
+            return undefined
+        }
+        const { url: url } = res as LinkParams
+        return url
     }
     getUsers(): Array<User> {
         const res = this.database.prepare(`
@@ -203,16 +214,18 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     getLastLinkID(): number {
         const res = this.database.prepare(`
         SELECT max(ID) FROM Link`).get()
-        if ("number" === typeof res)
-            return res
-        if ("string" === typeof res && res.length !== 0) {
-            return parseInt(res)
+        type maxId = {
+            "max(ID)": number
         }
-        return -1
+        if (res === undefined) {
+            return -1
+        }
+        const { "max(ID)": id } = res as maxId
+        return id
     }
     getLinkByShort(short: string): Link | undefined {
         const res = this.database.prepare(`
-        SELECT ID FROM Link WHERE short == ?`).get(short)
+        SELECT * FROM Link WHERE short == ?`).get(short)
         if (res === undefined) {
             return undefined
         }
@@ -223,7 +236,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
     teardown() {
         try {
-            this.database.exec('DELETE FROM User; DELETE FROM Link; DELETE FROM TrackLink;')
+            this.database.exec('DELETE FROM Link;DELETE FROM User;  DELETE FROM TrackLink;')
         } catch (err) {
             console.error('error deleting tables:', err);
             return
