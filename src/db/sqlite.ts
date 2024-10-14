@@ -1,7 +1,8 @@
 import BetterSqlite3 from "better-sqlite3"
+import { existsSync, unlinkSync } from "fs"
+
 import * as db from "./main.js"
 import { Link, LinkParams, User, UserEncryptedPW } from "../types.js"
-import { existsSync, unlinkSync } from "fs"
 
 export class SqliteDB implements db.LinkDB, db.UserDB {
     database: BetterSqlite3.Database
@@ -24,6 +25,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         this.getUserByUsername = this.getUserByUsername.bind(this)
         this.getUserByEmail = this.getUserByEmail.bind(this)
         this.getUserByID = this.getUserByID.bind(this)
+        this.getEncryptedPasswordByID = this.getEncryptedPasswordByID.bind(this)
         this.serveLink = this.serveLink.bind(this)
         this.deleteLinkByID = this.deleteLinkByID.bind(this)
         this.cancelLinkByID = this.cancelLinkByID.bind(this)
@@ -135,9 +137,9 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
     getEncryptedPasswordByID(id: string): string | undefined {
         const res = this.database.prepare(`
-        SELECT encriptedPassword FROM User WHERE ID == ?`).get(id)
-        if (res === undefined || (res as UserEncryptedPW).encriptedPassword === undefined) return undefined
-        return (res as UserEncryptedPW).encriptedPassword as string | undefined
+        SELECT encryptedPassword FROM User WHERE ID == ?`).get(id)
+        if (res === undefined || (res as UserEncryptedPW).encryptedPassword === undefined) return undefined
+        return (res as UserEncryptedPW).encryptedPassword as string | undefined
     }
     getUserByEmail(email: string): User | undefined {
         const res = this.database.prepare(`
@@ -166,11 +168,11 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     createUser(user: User): User | undefined {
         const stmt = this.database.prepare(`
             INSERT INTO User (ID, guest, username, email, deleted,
-            createdAt, deletedAt, encriptedPassword, isAdmin)
+            createdAt, deletedAt, encryptedPassword, isAdmin)
             VALUES (?,?,?,?,?,?,?,?,?)
             `)
         const info = stmt.run(user.ID, user.guest ? 1 : 0, user.username, user.email,
-            user.deleted ? 1 : 0, user.createdAt, user.deletedAt, user.encriptedPassword,
+            user.deleted ? 1 : 0, user.createdAt, user.deletedAt, user.encryptedPassword,
             user.isAdmin ? 1 : 0)
         if (info === undefined) return undefined
         if (info.changes < 1) return undefined
@@ -267,7 +269,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
             deleted BOOLEAN DEFAULT 0,
             createdAt TEXT NOT NULL,
             deletedAt TEXT NOT NULL,
-            encriptedPassword TEXT NOT NULL
+            encryptedPassword TEXT NOT NULL
             )
         `)
         this.database.exec(`

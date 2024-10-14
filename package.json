@@ -1,14 +1,14 @@
 {
     "name": "link_shortener",
     "version": "1.0.0",
-    "main": "index.js",
-    "type": "module",
+    "main": "/build/src/main.js",
+    "type": "CommonJS",
     "scripts": {
-        "script": "npm run build && node ./build/scripts/script_populate_db.js",
+        "script": "npm run build && node ./build/src/scripts/script_populate_db.js",
         "build": "tsc",
-        "dev": "npm run build && node ./build/main.js",
-        "debug": "npm run build && node --inspect ./build/main.js",
-        "test": "jest"
+        "dev": "npm run build && node ./build/src/main.js",
+        "debug": "npm run build && node --inspect ./build/src/main.js",
+        "test": "npm run build && jest"
     },
     "keywords": [],
     "author": "",
@@ -21,8 +21,10 @@
         "@types/jest": "^29.5.13",
         "@types/jsonwebtoken": "^9.0.6",
         "@types/node": "^22.5.4",
+        "@types/supertest": "^6.0.2",
         "@types/uuid": "^10.0.0",
         "jest": "^29.7.0",
+        "supertest": "^7.0.0",
         "ts-jest": "^29.2.5",
         "ts-node": "^10.9.2",
         "tsx": "^4.19.1",
@@ -31,7 +33,7 @@
     "dependencies": {
         "better-sqlite3": "11.2.1",
         "express": "4.19.2",
-        "jsonwebtoken": "^9.0.2",
+        "jsonwebtoken": "9.0.2",
         "uuid": "10.0.0",
         "zod": "3.23.8"
     }

@@ -16,7 +16,7 @@ export const UserSchema = z.object({
     deleted: z.boolean(),
     createdAt: z.string().date(),
     deletedAt: z.string().date(),
-    encriptedPassword: z.string(),
+    encryptedPassword: z.string(),
 })
 export const LinkSchema = z.object({
     userID: z.string().uuid(),
@@ -33,7 +33,7 @@ export const User_DTOSchema = UserSchema.omit({
     isAdmin: true,
     deletedAt: true,
     deleted: true,
-    encriptedPassword: true,
+    encryptedPassword: true,
 })
 export const Link_DTOSchema = LinkSchema.omit({
     ID: true,
@@ -57,7 +57,7 @@ export const UserParamsSchema = UserSchema.omit({
     deletedAt: true,
     deleted: true,
     createdAt: true,
-    encriptedPassword: true,
+    encryptedPassword: true,
 
 }).extend({
     password: z.string().max(15, "Password must be 15 characters or less")
@@ -127,7 +127,7 @@ export function createUserFromParams(params: UserParams, encrypter: PasswordEncr
         deleted: false,
         deletedAt: "",
         createdAt: (new Date(Date.now())).toISOString().split("T")[0],
-        encriptedPassword: encrypter.encrytp(validParams.password),
+        encryptedPassword: encrypter.encrytp(validParams.password),
     }
     return new Operation(true, user)
 }
@@ -154,6 +154,7 @@ export class PasswordEncrypter {
     private secret: string
     constructor(secret: string) {
         this.secret = secret
+        this.encrytp = this.encrytp.bind(this)
     }
     encrytp(input: string): string {
         // Create a HMAC hash using SHA-256

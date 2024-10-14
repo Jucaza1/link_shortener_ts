@@ -1,11 +1,11 @@
 import { describe, test, expect } from '@jest/globals'
-import { SqliteDB } from "../src/db/sqlite"
-import * as db from "../src/db/main"
-import * as types from "../src/types"
-function createUserDB(): db.UserDB {
+import { SqliteDB } from "../src/db/sqlite.js"
+import * as db from "../src/db/main.js"
+import * as types from "../src/types.js"
+export function createUserDB(): db.UserDB {
     return new SqliteDB("test_db.db")
 }
-function createLinkDB(): db.LinkDB {
+export function createLinkDB(): db.LinkDB {
     return new SqliteDB("test_db.db")
 }
 describe('Userdb', () => {
@@ -16,7 +16,7 @@ describe('Userdb', () => {
         const user: types.User = {
             username: "testname",
             email: "test@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "22250a76-9868-4afc-9abb-c677574dfd32",
             guest: false,
             deleted: false,
@@ -36,7 +36,7 @@ describe('Userdb', () => {
         const user: types.User = {
             username: "testname",
             email: "test@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "22250a76-9868-4afc-9abb-c677574dfd31",
             guest: false,
             deleted: false,
@@ -57,7 +57,7 @@ describe('Userdb', () => {
         const user: types.User = {
             username: "testname",
             email: "test@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "22250a76-9868-4afc-9abb-c677574dfd31",
             guest: false,
             deleted: false,
@@ -78,7 +78,7 @@ describe('Userdb', () => {
         const user: types.User = {
             username: "testname",
             email: "test@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "22250a76-9868-4afc-9abb-c677574dfd31",
             guest: false,
             deleted: false,
@@ -99,7 +99,7 @@ describe('Userdb', () => {
         const user: types.User = {
             username: "testname",
             email: "test@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "22250a76-9868-4afc-9abb-c677574dfd31",
             guest: false,
             deleted: false,
@@ -110,8 +110,8 @@ describe('Userdb', () => {
         const resUser = db.createUser(user)
         expect(resUser).toBeDefined()
         expect(resUser).toEqual(user)
-        const encriptedPassword = db.getEncryptedPasswordByID(user.ID)
-        expect(encriptedPassword).toEqual(user.encriptedPassword)
+        const encryptedPassword = db.getEncryptedPasswordByID(user.ID)
+        expect(encryptedPassword).toEqual(user.encryptedPassword)
         console.log = () => { }
         db.teardown()
     })
@@ -120,7 +120,7 @@ describe('Userdb', () => {
         const user1: types.User = {
             username: "testname1",
             email: "test1@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "00000000-0000-0000-0000-c677574dfd31",
             guest: false,
             deleted: false,
@@ -131,7 +131,7 @@ describe('Userdb', () => {
         const user2: types.User = {
             username: "testname2",
             email: "test2@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "00000000-0000-0000-0000-c677574dfd32",
             guest: false,
             deleted: false,
@@ -155,7 +155,7 @@ describe('Userdb', () => {
         const user: types.User = {
             username: "testname",
             email: "test@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "22250a76-9868-4afc-9abb-c677574dfd31",
             guest: false,
             deleted: false,
@@ -179,7 +179,7 @@ describe('Userdb', () => {
         const user1: types.User = {
             username: "testname1",
             email: "test1@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "00000000-0000-0000-0000-c677574dfd31",
             guest: false,
             deleted: false,
@@ -190,7 +190,7 @@ describe('Userdb', () => {
         const user2: types.User = {
             username: "testname2",
             email: "test2@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "00000000-0000-0000-0000-c677574dfd32",
             guest: false,
             deleted: false,
@@ -234,7 +234,7 @@ describe('Linkdb', () => {
         const user1: types.User = {
             username: "testname1",
             email: "test1@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "00000000-0000-0000-0000-c677574dfd31",
             guest: false,
             deleted: false,
@@ -279,7 +279,7 @@ describe('Linkdb', () => {
         const user: types.User = {
             username: "testname1",
             email: "test1@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "00000000-0000-0000-0000-c677574dfd31",
             guest: false,
             deleted: false,
@@ -333,7 +333,7 @@ describe('Linkdb', () => {
         const user: types.User = {
             username: "testname1",
             email: "test1@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "00000000-0000-0000-0000-c677574dfd31",
             guest: false,
             deleted: false,
@@ -387,7 +387,7 @@ describe('Linkdb', () => {
         const user: types.User = {
             username: "testname1",
             email: "test1@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "00000000-0000-0000-0000-c677574dfd31",
             guest: false,
             deleted: false,
@@ -431,7 +431,7 @@ describe('Linkdb', () => {
         const user1: types.User = {
             username: "testname1",
             email: "test1@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "00000000-0000-0000-0000-c677574dfd31",
             guest: false,
             deleted: false,
@@ -469,7 +469,7 @@ describe('Linkdb', () => {
         const user1: types.User = {
             username: "testname1",
             email: "test1@mail.com",
-            encriptedPassword: "testpassword",
+            encryptedPassword: "testpassword",
             ID: "00000000-0000-0000-0000-c677574dfd31",
             guest: false,
             deleted: false,

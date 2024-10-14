@@ -39,6 +39,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         this.getUserByID = this.getUserByID.bind(this)
         this.getUserByEmail = this.getUserByEmail.bind(this)
         this.getUserByUsername = this.getUserByUsername.bind(this)
+        this.getEncrytpedPasswordByID = this.getEncrytpedPasswordByID.bind(this)
         this.createUser = this.createUser.bind(this)
         this.createAdmin = this.createAdmin.bind(this)
         this.cancelUserByID = this.cancelUserByID.bind(this)
@@ -123,7 +124,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         const validUsername = validationRes.data
         try {
-            result = this.udb.getUserByEmail(validUsername)
+            result = this.udb.getUserByUsername(validUsername)
         } catch (e) {
             return new Operation(false, undefined, errorSource.database, "internal server error")
         }

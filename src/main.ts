@@ -12,7 +12,7 @@ const PORT = 3000
 const dbloc = "./shortener.db"
 const secret = "12345abcde";
 
-(new db.SqliteDB(dbloc)).teardown()
+// (new db.SqliteDB(dbloc)).teardown()
 
 const sqliteDB = new db.SqliteDB(dbloc)
 const hasher = new Hasher()
