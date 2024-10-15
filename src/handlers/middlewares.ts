@@ -29,11 +29,6 @@ export class AuthHandler {
                 .json(errorMsg("invalid credentials"))
             return
         }
-        console.log("recieved :")
-        console.log(req.body)
-        console.log(req.body?.username)
-        console.log(req.body?.password)
-        console.log(req.body?.email)
         const user = {
             username: req.body.username,
             email: req.body.email,
@@ -41,10 +36,6 @@ export class AuthHandler {
         }
         if (user.username !== undefined) {
             operation = this.uController.getUserByUsername(user.username)
-            //DEBUG
-            const operation3 = this.uController.getUsers()
-            console.log("operation.success:")
-        console.log(operation3.data)
         } else {
             if (user.email === undefined) {
                 res.status(httpStatus.HTTP_STATUS_BAD_REQUEST)
@@ -65,8 +56,6 @@ export class AuthHandler {
             return
         }
         const encryptedPW = this.encrypter.encrytp(user.password)
-        console.info(encryptedPW)
-        console.info(operation2.data)
         if (operation2.data !== encryptedPW) {
             res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
                 .json(errorMsg("incorrect credentials"))
