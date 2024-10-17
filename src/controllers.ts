@@ -14,6 +14,7 @@ export interface UserController {
     cancelUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
     deleteUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
 }
+
 export interface LinkController {
     getLinkByID(id: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
     getLinksByUser(id: string, forAdmin?: boolean): Operation<Array<types.Link_DTO> | Array<types.Link>>
@@ -22,10 +23,12 @@ export interface LinkController {
     deleteLinkByID(id: number, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
     cancelLinkByID(id: number, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
 }
+
 export interface LinkServerController {
     serveLink(short: string): Operation<string | undefined>
     trackLink(short: string): Operation<boolean>
 }
+
 export class ControllerImp implements UserController, LinkController, LinkServerController {
     udb: db.UserDB
     ldb: db.LinkDB
@@ -55,14 +58,16 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         this.trackLink = this.trackLink.bind(this)
 
     }
+
     getUsers(): Operation<Array<types.User> | undefined> {
         let result: Array<types.User> | undefined
         result = this.udb.getUsers()
-        if (!result){
-            return new Operation(false,undefined,errorSource.database, "internal server error")
+        if (!result) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
         }
-        return new Operation(true,result)
+        return new Operation(true, result)
     }
+
     getUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
         let result: types.User | undefined
         const validationRes = types.UserSchema.shape.ID.safeParse(id)
@@ -83,6 +88,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, types.parseUser_DTO(result))
     }
+
     getEncrytpedPasswordByID(id: string): Operation<string | undefined> {
         let result: string | undefined
         const validationRes = types.UserSchema.shape.ID.safeParse(id)
@@ -100,6 +106,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, result)
     }
+
     getUserByEmail(email: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
         let result: types.User | undefined
         const validationRes = types.UserSchema.shape.email.safeParse(email)
@@ -120,6 +127,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, types.parseUser_DTO(result))
     }
+
     getUserByUsername(username: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
         let result: types.User | undefined
         const validationRes = types.UserSchema.shape.username.safeParse(username)
@@ -140,6 +148,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, types.parseUser_DTO(result))
     }
+
     createUser(userParams: types.UserParams): Operation<types.User_DTO | undefined> {
         let result: types.User | undefined
         const validationRes = types.UserParamsSchema.safeParse(userParams)
@@ -161,6 +170,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, types.parseUser_DTO(result))
     }
+
     createAdmin(userParams: types.UserParams): Operation<types.User | undefined> {
         let result: types.User | undefined
         const validationRes = types.UserParamsSchema.safeParse(userParams)
@@ -182,6 +192,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, result)
     }
+
     cancelUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
         let result: types.User | undefined
         let success: boolean = false
@@ -212,6 +223,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         return new Operation(true, types.parseUser_DTO(result))
 
     }
+
     deleteUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
         let result: types.User | undefined
         let success: boolean = false
@@ -241,6 +253,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, types.parseUser_DTO(result))
     }
+
     getLinkByID(id: string, forAdmin: boolean = false): Operation<types.Link_DTO | types.Link | undefined> {
         let result: types.Link | undefined
         const validationRes = types.LinkSchema.shape.ID.safeParse(id)
@@ -261,6 +274,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, types.parseLink_DTO(result))
     }
+
     getLinksByUser(id: string, forAdmin: boolean = false): Operation<Array<types.Link_DTO> | Array<types.Link>> {
         let result: Array<types.Link> = []
         const validationRes = types.UserSchema.shape.ID.safeParse(id)
@@ -281,6 +295,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, result.map(link => types.parseLink_DTO(link)))
     }
+
     createLink(link: types.LinkParams, userID: string, forAdmin: boolean = false): Operation<types.Link_DTO | types.Link | undefined> {
         let userResult: types.User | undefined
         let result: types.Link | undefined
@@ -315,7 +330,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         result = this.ldb.getLinkByShort(short)
         if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "user not found")
+            return new Operation(false, undefined, errorSource.database, "link not found")
         }
         if (forAdmin) {
             return new Operation(true, result)
@@ -379,6 +394,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, result)
     }
+
     cancelLinkByID(id: number, userID: string, isAdmin: boolean = false): Operation<types.Link | undefined> {
         let result: types.Link | undefined
         let success: boolean = false
@@ -408,6 +424,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, result)
     }
+
     serveLink(short: string): Operation<string | undefined> {
         const url = this.ldb.serveLink(short)
         if (url === undefined || url === "") {
@@ -415,6 +432,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, url)
     }
+
     trackLink(short: string): Operation<boolean> {
         const success = this.ldb.trackServe(short)
         if (!success) {

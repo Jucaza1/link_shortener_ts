@@ -11,6 +11,7 @@ export interface UserDB {
     deleteUserByID(id: string): boolean
     teardown():void
 }
+
 export interface LinkDB {
     getLinksByUser(UserID: string): Array<types.Link>
     getLinkByID(id: number): types.Link | undefined

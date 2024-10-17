@@ -14,6 +14,7 @@ export class Hasher {
         this.unhash = this.unhash.bind(this)
 
     }
+
     hash(input: number): string {
         const min = 0
         const base = this.base.length
@@ -42,6 +43,7 @@ export class Hasher {
         }
         return result
     }
+
     unhash(input: string): number {
         let c = this.base[0]
         if (c === "]") c = "\\]"

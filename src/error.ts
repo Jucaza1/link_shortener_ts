@@ -3,6 +3,7 @@ export class Operation<T> {
     data: T | undefined
     source: errorSource | undefined
     msg: string | undefined
+
     constructor(success: boolean, data: undefined | T = undefined,
         source: errorSource | undefined = undefined,
         msg: string | undefined = undefined) {
@@ -13,6 +14,7 @@ export class Operation<T> {
         this.msg = msg
     }
 }
+
 export enum errorSource {
     none,
     database,

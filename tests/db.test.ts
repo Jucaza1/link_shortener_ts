@@ -21,7 +21,7 @@ describe('Userdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser = db.createUser(user)
@@ -41,7 +41,7 @@ describe('Userdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser = db.createUser(user)
@@ -62,7 +62,7 @@ describe('Userdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser = db.createUser(user)
@@ -83,7 +83,7 @@ describe('Userdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser = db.createUser(user)
@@ -104,7 +104,7 @@ describe('Userdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser = db.createUser(user)
@@ -125,7 +125,7 @@ describe('Userdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const user2: types.User = {
@@ -136,7 +136,7 @@ describe('Userdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser1 = db.createUser(user1)
@@ -160,7 +160,7 @@ describe('Userdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser = db.createUser(user)
@@ -184,7 +184,7 @@ describe('Userdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const user2: types.User = {
@@ -195,7 +195,7 @@ describe('Userdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser1 = db.createUser(user1)
@@ -227,7 +227,7 @@ describe('Linkdb', () => {
             status: true,
             userID: "00000000-0000-0000-0000-c677574dfd31",
             expiresAt: "",
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const udb = createUserDB()
@@ -239,7 +239,7 @@ describe('Linkdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user1)
@@ -262,7 +262,7 @@ describe('Linkdb', () => {
             status: true,
             userID: "00000000-0000-0000-0000-c677574dfd31",
             expiresAt: "",
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }, {
             ID: 2,
@@ -272,7 +272,7 @@ describe('Linkdb', () => {
             status: true,
             userID: "00000000-0000-0000-0000-c677574dfd31",
             expiresAt: "",
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         },]
         const udb = createUserDB()
@@ -284,7 +284,7 @@ describe('Linkdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user)
@@ -316,7 +316,7 @@ describe('Linkdb', () => {
             status: true,
             userID: "00000000-0000-0000-0000-c677574dfd31",
             expiresAt: "",
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }, {
             ID: 2,
@@ -326,7 +326,7 @@ describe('Linkdb', () => {
             status: true,
             userID: "00000000-0000-0000-0000-c677574dfd31",
             expiresAt: "",
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         },]
         const udb = createUserDB()
@@ -338,7 +338,7 @@ describe('Linkdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user)
@@ -370,7 +370,7 @@ describe('Linkdb', () => {
             status: true,
             userID: "00000000-0000-0000-0000-c677574dfd31",
             expiresAt: "",
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }, {
             ID: 0,
@@ -380,7 +380,7 @@ describe('Linkdb', () => {
             status: true,
             userID: "00000000-0000-0000-0000-c677574dfd31",
             expiresAt: "",
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         },]
         const udb = createUserDB()
@@ -392,7 +392,7 @@ describe('Linkdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user)
@@ -424,7 +424,7 @@ describe('Linkdb', () => {
             status: true,
             userID: "00000000-0000-0000-0000-c677574dfd31",
             expiresAt: "",
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const udb = createUserDB()
@@ -436,7 +436,7 @@ describe('Linkdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user1)
@@ -462,7 +462,7 @@ describe('Linkdb', () => {
             status: true,
             userID: "00000000-0000-0000-0000-c677574dfd31",
             expiresAt: "",
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const udb = createUserDB()
@@ -474,7 +474,7 @@ describe('Linkdb', () => {
             guest: false,
             deleted: false,
             isAdmin: false,
-            createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+            createdAt: (new Date()).toISOString().split("T")[0],
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user1)

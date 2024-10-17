@@ -1,4 +1,5 @@
 import BetterSqlite3 from "better-sqlite3"
+import cron from 'node-cron'
 import { existsSync, unlinkSync } from "fs"
 
 import * as db from "./main.js"
@@ -17,6 +18,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         }
         this.database = new BetterSqlite3(this.location)
         this.init = this.init.bind(this)
+        this.cleanExpiredLink = this.cleanExpiredLink.bind(this)
         this.backup = this.init.bind(this)
         this.trackServe = this.trackServe.bind(this)
         this.deleteUserByID = this.deleteUserByID.bind(this)
@@ -38,6 +40,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         this.init()
         this.cleanExpiredLink()
     }
+
     getLinksByUser(UserID: string): Array<Link> {
         const res = this.database.prepare(`
         SELECT * FROM Link WHERE userID == ?`).all(UserID)
@@ -54,6 +57,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         }
         return linkRes
     }
+
     getLinkByID(id: number): Link | undefined {
         const res = this.database.prepare(`
         SELECT * FROM Link WHERE ID == ?`).get(id)
@@ -65,30 +69,33 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         linkRes.deleted = linkRes.deleted == true
         return linkRes
     }
+
     createLink(link: Link): Link | undefined {
         const stmt = this.database.prepare(`
             INSERT INTO Link (userID, url, short, status, deleted,
             createdAt, deletedAt, expiresAt)
             VALUES (?,?,?,?,?,?,?,?)
             `)
-        const info = stmt.run(link.userID, link.url, link.short,
+        const info = stmt.run(link.userID == ""? null:link.userID, link.url, link.short,
             link.status ? 1 : 0, link.deleted ? 1 : 0, link.createdAt, link.deletedAt, link.expiresAt)
         if (info === undefined) return undefined
         if (info.changes < 1) return undefined
         link.ID = info.lastInsertRowid as number
         return link
     }
+
     cancelLinkByID(id: number): boolean {
         const stmt = this.database.prepare(`
             UPDATE Link SET deleted = 1, deletedAt = ? WHERE ID == ?
             `)
-        const deletedAt: Link["deletedAt"] = (new Date(Date.now()))
+        const deletedAt: Link["deletedAt"] = (new Date())
             .toISOString().split('T')[0]
         const info = stmt.run(deletedAt, id)
         if (info === undefined) return false
         if (info.changes < 1) return false
         return true
     }
+
     deleteLinkByID(id: number): boolean {
         const stmt = this.database.prepare(`
             DELETE FROM Link WHERE ID == ?
@@ -98,6 +105,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         if (info.changes < 1) return false
         return true
     }
+
     serveLink(short: string): string | undefined {
         const res = this.database.prepare(`
         SELECT url FROM Link WHERE short == ?`).get(short)
@@ -107,6 +115,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         const { url: url } = res as LinkParams
         return url
     }
+
     getUsers(): Array<User> {
         const res = this.database.prepare(`
         SELECT * FROM User`).all()
@@ -124,6 +133,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         }
         return userRes
     }
+
     getUserByID(id: string): User | undefined {
         const res = this.database.prepare(`
         SELECT * FROM User WHERE ID == ?`).get(id)
@@ -136,12 +146,14 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         userRes.guest = userRes.guest == true
         return userRes
     }
+
     getEncryptedPasswordByID(id: string): string | undefined {
         const res = this.database.prepare(`
         SELECT encryptedPassword FROM User WHERE ID == ?`).get(id)
         if (res === undefined || (res as UserEncryptedPW).encryptedPassword === undefined) return undefined
         return (res as UserEncryptedPW).encryptedPassword as string | undefined
     }
+
     getUserByEmail(email: string): User | undefined {
         const res = this.database.prepare(`
         SELECT * FROM User WHERE email == ?`).get(email)
@@ -154,6 +166,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         userRes.guest = userRes.guest == true
         return userRes
     }
+
     getUserByUsername(username: string): User | undefined {
         const res = this.database.prepare(`
         SELECT * FROM User WHERE username == ?`).get(username)
@@ -166,6 +179,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         userRes.guest = userRes.guest == true
         return userRes
     }
+
     createUser(user: User): User | undefined {
         const stmt = this.database.prepare(`
             INSERT INTO User (ID, guest, username, email, deleted,
@@ -179,17 +193,19 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         if (info.changes < 1) return undefined
         return user
     }
+
     cancelUserByID(id: string): boolean {
         const stmt = this.database.prepare(`
             UPDATE User SET deleted = 1, deletedAt = ? WHERE ID == ?
             `)
-        const deletedAt: User["deletedAt"] = (new Date(Date.now()))
+        const deletedAt: User["deletedAt"] = (new Date())
             .toISOString().split('T')[0]
         const info = stmt.run(deletedAt, id)
         if (info === undefined) return false
         if (info.changes < 1) return false
         return true
     }
+
     deleteUserByID(id: string): boolean {
         const stmt = this.database.prepare(`
             DELETE FROM User WHERE ID == ?
@@ -199,6 +215,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         if (info.changes < 1) return false
         return true
     }
+
     trackServe(short: string): boolean {
         let stmt = this.database.prepare(`
             UPDATE TrackLink SET activity = activity + 1 WHERE short == ?
@@ -214,6 +231,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         if (info === undefined || info.changes < 1) return false
         return true
     }
+
     getLastLinkID(): number {
         const res = this.database.prepare(`
         SELECT max(ID) FROM Link`).get()
@@ -226,6 +244,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         const { "max(ID)": id } = res as maxId
         return id
     }
+
     getLinkByShort(short: string): Link | undefined {
         const res = this.database.prepare(`
         SELECT * FROM Link WHERE short == ?`).get(short)
@@ -237,6 +256,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         linkRes.deleted = linkRes.deleted == true
         return linkRes
     }
+
     teardown() {
         try {
             this.database.exec('DELETE FROM Link;DELETE FROM User;  DELETE FROM TrackLink;')
@@ -286,6 +306,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
             encryptedPassword TEXT NOT NULL
             )
         `)
+
         this.database.exec(`
             CREATE TABLE IF NOT EXISTS Link (
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -300,6 +321,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
             FOREIGN KEY(userID) REFERENCES User(ID)
             )
         `)
+
         this.database.exec(`
             CREATE TABLE IF NOT EXISTS TrackLink (
             short TEXT PRIMARY KEY,
@@ -307,6 +329,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
             )
         `)
     }
+
     backup() {
         this.database.backup(`${location}-backup-${Date.now()}.db`)
             .then(() => {

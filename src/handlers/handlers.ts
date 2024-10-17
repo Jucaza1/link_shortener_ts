@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import { constants as httpStatus } from "http2"
+
 import * as types from "../types.js"
 import { UserController, LinkServerController, LinkController } from "../controllers.js"
 import { Operation } from "../error.js"
@@ -10,6 +11,7 @@ export class UserHandler {
         this.uController = uController
         this.handleGetUsers = this.handleGetUsers.bind(this)
         this.handleGetUserByID = this.handleGetUserByID.bind(this)
+        this.handleGetMyUser = this.handleGetMyUser.bind(this)
         this.handleGetUserByEmail = this.handleGetUserByEmail.bind(this)
         this.handleGetUserByUsername = this.handleGetUserByUsername.bind(this)
         this.handleCreateUser = this.handleCreateUser.bind(this)
@@ -17,6 +19,30 @@ export class UserHandler {
         this.handleCancelUserByID = this.handleCancelUserByID.bind(this)
         this.handleDeleteUserByID = this.handleDeleteUserByID.bind(this)
     }
+
+    handleGetMyUser(_req: Request, res: Response) {
+        const user: types.User_Middleware = res.locals.user
+        if (!user) {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid id"))
+            return
+        }
+        if (user.ID === undefined || (typeof user.ID) !== "string" || user.ID === "") {
+            res
+                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
+                .json(types.errorMsg("invalid id"))
+            return
+        }
+        const operation = this.uController.getUserByID(user.ID)
+        if (operation.success === false || operation.data === undefined) {
+            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
+                .json(types.errorMsg(operation.msg as string))
+            return
+        }
+        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+    }
+
     handleGetUsers(_req: Request, res: Response) {
         const operation = this.uController.getUsers()
         if (!operation.success || !operation.data) {
@@ -27,6 +53,7 @@ export class UserHandler {
         }
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
+
     handleGetUserByID(req: Request, res: Response) {
         const params = req.params
         const id = params.id
@@ -44,6 +71,7 @@ export class UserHandler {
         }
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
+
     handleGetUserByEmail(req: Request, res: Response) {
         const email = req.body.email
         if (email === undefined || (typeof email) !== "string" || email === "") {
@@ -60,6 +88,7 @@ export class UserHandler {
         }
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
+
     handleGetUserByUsername(req: Request, res: Response) {
         const username = req.params.username
         if (username === undefined || (typeof username) !== "string" || username === "") {
@@ -76,6 +105,7 @@ export class UserHandler {
         }
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
+
     handleCreateUser(req: Request, res: Response) {
         const params = req.body
         const user: types.UserParams = {
@@ -99,6 +129,7 @@ export class UserHandler {
         }
         res.status(httpStatus.HTTP_STATUS_CREATED).json(operation.data)
     }
+
     handleCreateAdmin(req: Request, res: Response) {
         const params = req.body
         const user: types.UserParams = {
@@ -120,6 +151,7 @@ export class UserHandler {
         }
         res.status(httpStatus.HTTP_STATUS_CREATED).json(operation.data)
     }
+
     handleCancelUserByID(req: Request, res: Response) {
         const id = req.params.id
         const user: types.User_Middleware = res.locals.user
@@ -145,6 +177,7 @@ export class UserHandler {
         }
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
+
     handleDeleteUserByID(req: Request, res: Response) {
         const id = req.params.id
         const user: types.User_Middleware = res.locals.user
@@ -171,6 +204,7 @@ export class UserHandler {
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
 }
+
 export class LinkHandler {
     linkController: LinkController
     constructor(linkController: LinkController) {
@@ -182,6 +216,7 @@ export class LinkHandler {
         this.handleGetLinkById = this.handleGetLinkById.bind(this)
         this.handleGetLinksByUser = this.handleGetLinksByUser.bind(this)
     }
+
     handleCreateLink(req: Request, res: Response) {
         const params = req.body
         const user: types.User_Middleware = res.locals.user
@@ -194,6 +229,9 @@ export class LinkHandler {
                 .json(types.errorMsg("invalid id"))
             return
         }
+        const hasHttpPrefix = /^https?:\/\//i.test(link.url);
+        link.url = hasHttpPrefix ? link.url : `http://${link.url}`;
+
         const operation = this.linkController.createLink(link, user?.ID, user?.isAdmin)
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
@@ -246,6 +284,7 @@ export class LinkHandler {
         }
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
+
     handleCancelLinkByID(req: Request, res: Response) {
         const id = req.params.id
         const user: types.User_Middleware = res.locals.user
@@ -272,6 +311,7 @@ export class LinkHandler {
         }
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
+
     handleGetLinkById(req: Request, res: Response) {
         const id: string = req.params.id
         const user: types.User_Middleware = res.locals.user
@@ -293,6 +333,7 @@ export class LinkHandler {
         }
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
+
     handleGetLinksByUser(req: Request, res: Response) {
         const id: string = req.params.id
         const user: types.User_Middleware = res.locals.user
@@ -316,12 +357,14 @@ export class LinkHandler {
     }
 
 }
+
 export class LSHandler {
     linkSController: LinkServerController
     constructor(linkSController: LinkServerController) {
         this.linkSController = linkSController
         this.handleServeLink = this.handleServeLink.bind(this)
     }
+
     handleServeLink(req: Request, res: Response) {
         const params = req.params
         if (params.short === undefined || params.short === "") {

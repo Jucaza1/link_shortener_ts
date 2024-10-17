@@ -1,4 +1,4 @@
-import z  from "zod"
+import z from "zod"
 import crypto from 'crypto';
 import { v4 as uuidv4 } from "uuid"
 
@@ -18,6 +18,7 @@ export const UserSchema = z.object({
     deletedAt: z.string().date(),
     encryptedPassword: z.string(),
 })
+
 export const LinkSchema = z.object({
     userID: z.string().uuid(),
     ID: z.number(),
@@ -34,17 +35,20 @@ export const LinkSchema = z.object({
     deletedAt: z.string().date(),
     expiresAt: z.string().date()
 })
+
 export const User_DTOSchema = UserSchema.omit({
     isAdmin: true,
     deletedAt: true,
     deleted: true,
     encryptedPassword: true,
 })
+
 export const Link_DTOSchema = LinkSchema.omit({
     ID: true,
     deleted: true,
     deletedAt: true,
 })
+
 export const UserEncryptedPWSchema = UserSchema.omit({
     ID: true,
     isAdmin: true,
@@ -55,6 +59,7 @@ export const UserEncryptedPWSchema = UserSchema.omit({
     email: true,
     username: true
 })
+
 export const UserParamsSchema = UserSchema.omit({
     ID: true,
     isAdmin: true,
@@ -70,6 +75,7 @@ export const UserParamsSchema = UserSchema.omit({
         .regex(/^[a-zA-Z0-9\p{P}]+$/u, "Password can only contain letters, numbers, and punctuation"),
 
 })
+
 export const LinkParamsSchema = LinkSchema.omit({
     ID: true,
     createdAt: true,
@@ -80,6 +86,7 @@ export const LinkParamsSchema = LinkSchema.omit({
     expiresAt: true,
     short: true,
 })
+
 export type User = z.infer<typeof UserSchema>
 export type UserParams = z.infer<typeof UserParamsSchema>
 export type UserEncryptedPW = z.infer<typeof UserEncryptedPWSchema>
@@ -88,8 +95,8 @@ export type LinkParams = z.infer<typeof LinkParamsSchema>
 export type User_DTO = z.infer<typeof User_DTOSchema>
 export type Link_DTO = z.infer<typeof Link_DTOSchema>
 export type User_Middleware = {
-    ID:z.infer<typeof UserSchema.shape.ID>,
-    isAdmin:z.infer<typeof UserSchema.shape.isAdmin>,
+    ID: z.infer<typeof UserSchema.shape.ID>,
+    isAdmin: z.infer<typeof UserSchema.shape.isAdmin>,
 }
 
 export function parseUser_DTO(u: User): User_DTO {
@@ -101,6 +108,7 @@ export function parseUser_DTO(u: User): User_DTO {
         createdAt: u.createdAt,
     }
 }
+
 export function parseLink_DTO(l: Link): Link_DTO {
     return {
         userID: l.userID,
@@ -111,12 +119,15 @@ export function parseLink_DTO(l: Link): Link_DTO {
         expiresAt: l.expiresAt,
     }
 }
+
 type ErrorMsg = {
     error: string
 }
+
 export function errorMsg(s: string): ErrorMsg {
     return { error: s }
 }
+
 export function createUserFromParams(params: UserParams, encrypter: PasswordEncrypter, isAdmin: boolean = false): Operation<User | undefined> {
     const validationRes = UserParamsSchema.safeParse(params)
     if (!validationRes.success) {
@@ -131,15 +142,16 @@ export function createUserFromParams(params: UserParams, encrypter: PasswordEncr
         guest: false,
         deleted: false,
         deletedAt: "",
-        createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+        createdAt: (new Date()).toISOString().split("T")[0],
         encryptedPassword: encrypter.encrytp(validParams.password),
     }
     return new Operation(true, user)
 }
+
 export function createLinkFromParams(params: LinkParams, userID: string, short: string): Operation<Link | undefined> {
     const validationRes = LinkParamsSchema.safeParse(params)
     if (!validationRes.success) {
-        return new Operation(false, undefined, errorSource.validation, "invalid user")
+        return new Operation(false, undefined, errorSource.validation, "invalid url")
     }
     const validParams = validationRes.data
     const link: Link = {
@@ -149,7 +161,7 @@ export function createLinkFromParams(params: LinkParams, userID: string, short: 
         short: short,
         status: true,
         deleted: false,
-        createdAt: (new Date(Date.now())).toISOString().split("T")[0],
+        createdAt: (new Date()).toISOString().split("T")[0],
         deletedAt: "",
         expiresAt: "",
     }
@@ -190,25 +202,3 @@ export class PasswordEncrypter {
         return hash
     }
 }
-// export type User = {
-//     ID: UUID
-//     username: string
-//     email: string
-//     deleted: boolean
-//     createdAt: number
-//     deletedAt: number
-//     encriptedPassword: string
-// }
-// export type Link = {
-//     ID:UUID
-//     url: string
-//     short: string
-//     userID: UUID
-//     status: boolean
-//     deleted: boolean
-//     createdAt: number
-//     deletedAt: number
-// }
-// export type Link_DTO = Omit<Link, "userID" | "deletedAt" | "deleted">
-// export type User_DTO = Omit<User, "deletedAt" | "deleted">
-//

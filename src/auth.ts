@@ -13,11 +13,13 @@ export class JWT_Auther implements Auther {
         this.generateToken = this.generateToken.bind(this)
         this.verifyToken = this.verifyToken.bind(this)
     }
+
     generateToken(input: any): string {
         const token = jwt.sign(input, this.secret, { algorithm: 'HS256', expiresIn: "1h" });
         return token
 
     }
+
     verifyToken(token: string): undefined | any {
         let decoded: jwt.JwtPayload | string
         if (token === undefined || token === "") {
@@ -37,6 +39,7 @@ export class JWT_Auther implements Auther {
         return decoded
     }
 }
+
 export function TestJWT() {
     const jwt_auther = new JWT_Auther("secrettest")
     const input = {
