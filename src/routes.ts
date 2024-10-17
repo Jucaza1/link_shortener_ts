@@ -24,6 +24,9 @@ export function createRouter(
     // v1Router.use("/",json())
     v1Router.post("/users", uHandler.handleCreateUser)
     v1Router.post("/login", authHandler.authenticate)
+    //endpoint for anonymous link creation with rate limiter
+    v1Router.post("/guestlink", limiter, lHandler.handleCreateAnonymousLink)
+
     const validateRouter = Router()
     v1Router.use("/", authHandler.validateMiddleware, validateRouter)
 

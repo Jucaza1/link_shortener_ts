@@ -176,6 +176,7 @@ export class LinkHandler {
     constructor(linkController: LinkController) {
         this.linkController = linkController
         this.handleCreateLink = this.handleCreateLink.bind(this)
+        this.handleCreateAnonymousLink = this.handleCreateAnonymousLink.bind(this)
         this.handleDeleteLinkByID = this.handleDeleteLinkByID.bind(this)
         this.handleCancelLinkByID = this.handleCancelLinkByID.bind(this)
         this.handleGetLinkById = this.handleGetLinkById.bind(this)
@@ -201,6 +202,24 @@ export class LinkHandler {
         }
         res.status(httpStatus.HTTP_STATUS_CREATED).json(operation.data)
     }
+
+    handleCreateAnonymousLink(req: Request, res: Response) {
+        const params = req.body
+        const link: types.LinkParams = {
+            url: params.url,
+        }
+        const hasHttpPrefix = /^https?:\/\//i.test(link.url);
+        link.url = hasHttpPrefix ? link.url : `http://${link.url}`;
+
+        const operation = this.linkController.createAnonymousLink(link)
+        if (operation.success === false || operation.data === undefined) {
+            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
+                .json(types.errorMsg(operation.msg as string))
+            return
+        }
+        res.status(httpStatus.HTTP_STATUS_CREATED).json(operation.data)
+    }
+
     handleDeleteLinkByID(req: Request, res: Response) {
         const id = req.params.id
         const user: types.User_Middleware = res.locals.user

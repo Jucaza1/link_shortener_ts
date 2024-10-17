@@ -18,6 +18,7 @@ export interface LinkController {
     getLinkByID(id: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
     getLinksByUser(id: string, forAdmin?: boolean): Operation<Array<types.Link_DTO> | Array<types.Link>>
     createLink(url: types.LinkParams, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
+    createAnonymousLink(link: types.LinkParams): Operation<types.Link_DTO | undefined>
     deleteLinkByID(id: number, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
     cancelLinkByID(id: number, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
 }
@@ -47,6 +48,9 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         this.getLinkByID = this.getLinkByID.bind(this)
         this.getLinksByUser = this.getLinksByUser.bind(this)
         this.createLink = this.createLink.bind(this)
+        this.cancelLinkByID = this.cancelLinkByID.bind(this)
+        this.deleteLinkByID = this.deleteLinkByID.bind(this)
+        this.createAnonymousLink = this.createAnonymousLink.bind(this)
         this.serveLink = this.serveLink.bind(this)
         this.trackLink = this.trackLink.bind(this)
 
@@ -318,6 +322,34 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         }
         return new Operation(true, types.parseLink_DTO(result))
     }
+
+    createAnonymousLink(link: types.LinkParams): Operation<types.Link_DTO | undefined> {
+        let result: types.Link | undefined
+        let validationLinkRes = types.LinkParamsSchema.safeParse(link)
+        if (!validationLinkRes.success) {
+            return new Operation(false, result, errorSource.validation, "invalid url")
+        }
+        const next = this.ldb.getLastLinkID() + 1
+        const short = this.haser.hash(next)
+        const durationMilis = 1000 * 60 * 60 * 24
+        const expDate = (new Date(Date.now() + durationMilis)).toISOString().split("T")[0]
+        const operation = types.createLinkFromParamsWithExpiration(link, "", short, expDate)
+        if (!operation.success || operation.data === undefined) {
+            return operation
+        }
+        result = operation.data
+        try {
+            result = this.ldb.createLink(result)
+        } catch (e) {
+            return new Operation(false, undefined, errorSource.database, "internal server error")
+        }
+        result = this.ldb.getLinkByShort(short)
+        if (result === undefined) {
+            return new Operation(false, undefined, errorSource.database, "link not found")
+        }
+        return new Operation(true, types.parseLink_DTO(result))
+    }
+
     deleteLinkByID(id: number, userID: string, isAdmin: boolean = false): Operation<types.Link | undefined> {
         let result: types.Link | undefined
         let success: boolean = false

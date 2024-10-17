@@ -36,6 +36,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         this.getUsers = this.getUsers.bind(this)
         this.teardown = this.teardown.bind(this)
         this.init()
+        this.cleanExpiredLink()
     }
     getLinksByUser(UserID: string): Array<Link> {
         const res = this.database.prepare(`
@@ -254,6 +255,19 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
                 return
             }
         }
+    }
+
+    private cleanExpiredLink() {
+        //-------------m h d m dm
+        cron.schedule('0 0 * * *', () => {
+            const stmt = this.database.prepare(`
+                DELETE FROM Links
+                WHERE expiresAt < DATE('now');
+            `);
+            const result = stmt.run();
+            console.log('Expired links cleaned up');
+            console.log(`cleaned ${result.changes} links`);
+        });
     }
 
     private init() {

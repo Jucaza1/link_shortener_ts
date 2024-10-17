@@ -21,7 +21,12 @@ export const UserSchema = z.object({
 export const LinkSchema = z.object({
     userID: z.string().uuid(),
     ID: z.number(),
-    url: z.string().url(),
+    url: z.string().url().refine((url) => {
+        const domainRegex = /^https?:\/\/[a-zA-Z0-9\-_\.]+\.[a-z]{2,}(\/[a-zA-Z0-9\-_\.]*)*(\?[a-zA-Z0-9\-_=&]*)?$/i;
+        return domainRegex.test(url);
+    }, {
+        message: "Invalid URL: Must contain a valid domain like .com, .org, etc.",
+    }),
     short: z.string().url(),
     status: z.boolean(),
     deleted: z.boolean(),
@@ -150,6 +155,27 @@ export function createLinkFromParams(params: LinkParams, userID: string, short: 
     }
     return new Operation(true, link)
 }
+
+export function createLinkFromParamsWithExpiration(params: LinkParams, userID: string, short: string, expDate: string): Operation<Link | undefined> {
+    const validationRes = LinkParamsSchema.safeParse(params)
+    if (!validationRes.success) {
+        return new Operation(false, undefined, errorSource.validation, "invalid url")
+    }
+    const validParams = validationRes.data
+    const link: Link = {
+        ID: 0,
+        userID: userID,
+        url: validParams.url,
+        short: short,
+        status: true,
+        deleted: false,
+        createdAt: (new Date()).toISOString().split("T")[0],
+        deletedAt: "",
+        expiresAt: expDate,
+    }
+    return new Operation(true, link)
+}
+
 export class PasswordEncrypter {
     private secret: string
     constructor(secret: string) {
