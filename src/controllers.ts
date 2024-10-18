@@ -347,7 +347,7 @@ export class ControllerImp implements UserController, LinkController, LinkServer
         const next = this.ldb.getLastLinkID() + 1
         const short = this.haser.hash(next)
         const durationMilis = 1000 * 60 * 60 * 24
-        const expDate = (new Date(Date.now() + durationMilis)).toISOString().split("T")[0]
+        const expDate = (new Date(Date.now() + durationMilis)).toISOString().split(".")[0]
         const operation = types.createLinkFromParamsWithExpiration(link, "", short, expDate)
         if (!operation.success || operation.data === undefined) {
             return operation

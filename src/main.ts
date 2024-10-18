@@ -14,6 +14,8 @@ const secret = "12345abcde";
 // (new db.SqliteDB(dbloc)).teardown()
 
 const sqliteDB = new db.SqliteDB(dbloc)
+//start cron cleaning task
+sqliteDB.startCleanExpiredLink()
 const hasher = new Hasher()
 const encrypter = new PasswordEncrypter("secretforpassword")
 const auther = new JWT_Auther(secret)

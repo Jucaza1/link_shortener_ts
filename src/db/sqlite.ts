@@ -18,7 +18,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         }
         this.database = new BetterSqlite3(this.location)
         this.init = this.init.bind(this)
-        this.cleanExpiredLink = this.cleanExpiredLink.bind(this)
+        this.startCleanExpiredLink = this.startCleanExpiredLink.bind(this)
         this.backup = this.init.bind(this)
         this.trackServe = this.trackServe.bind(this)
         this.deleteUserByID = this.deleteUserByID.bind(this)
@@ -38,7 +38,6 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         this.getUsers = this.getUsers.bind(this)
         this.teardown = this.teardown.bind(this)
         this.init()
-        this.cleanExpiredLink()
     }
 
     getLinksByUser(UserID: string): Array<Link> {
@@ -277,7 +276,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         }
     }
 
-    private cleanExpiredLink() {
+    startCleanExpiredLink() {
         //-------------m h d m dm
         cron.schedule('0 0 * * *', () => {
             const stmt = this.database.prepare(`
