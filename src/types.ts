@@ -142,7 +142,7 @@ export function createUserFromParams(params: UserParams, encrypter: PasswordEncr
         guest: false,
         deleted: false,
         deletedAt: "",
-        createdAt: (new Date()).toISOString().split("T")[0],
+        createdAt: (new Date()).toISOString().split(".")[0],
         encryptedPassword: encrypter.encrytp(validParams.password),
     }
     return new Operation(true, user)
@@ -161,7 +161,7 @@ export function createLinkFromParams(params: LinkParams, userID: string, short: 
         short: short,
         status: true,
         deleted: false,
-        createdAt: (new Date()).toISOString().split("T")[0],
+        createdAt: (new Date()).toISOString().split(".")[0],
         deletedAt: "",
         expiresAt: "",
     }
@@ -181,7 +181,7 @@ export function createLinkFromParamsWithExpiration(params: LinkParams, userID: s
         short: short,
         status: true,
         deleted: false,
-        createdAt: (new Date()).toISOString().split("T")[0],
+        createdAt: (new Date()).toISOString().split(".")[0],
         deletedAt: "",
         expiresAt: expDate,
     }

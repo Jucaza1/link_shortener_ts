@@ -1,7 +1,7 @@
 import { describe, test, expect } from "@jest/globals"
 import supertest from "supertest"
-import express, { json, NextFunction, Request, Response } from "express"
-import {User, UserParams} from "../src/types.js"
+import express, { json } from "express"
+import { UserParams } from "../src/types.js"
 import { AuthHandler } from "../src/handlers/middlewares.js"
 import { JWT_Auther } from "../src/auth.js"
 import { ControllerImp } from "../src/controllers.js"
@@ -29,19 +29,11 @@ export function insertUserParms(user: UserParams, udb: db.UserDB, ldb: db.LinkDB
 }
 describe('handlers', () => {
     test('login', async () => {
-        const logger = (req: Request, _res:Response, next:NextFunction)=>{
-            console.info(req.body)
-            const user =udb.getUserByUsername(req.body.username as string)
-            const encpwd = udb.getEncryptedPasswordByID(( user as User).ID)
-            console.info(user?.encryptedPassword)
-            console.info(encpwd)
-            next()
-        }
         const udb = createUserDB()
         const ldb = createLinkDB()
         const AuthHandler = createAuthHandler(udb, ldb)
         const app = express()
-        app.post("/login",json(),logger, AuthHandler.authenticate)
+        app.post("/login", json(), AuthHandler.authenticate)
         const user: UserParams = {
             username: "testname",
             email: "test@mail.com",
@@ -54,11 +46,10 @@ describe('handlers', () => {
             .send({
                 username: user.username,
                 password: user.password
-            }).set("Content-Type","application/json")
+            }).set("Content-Type", "application/json")
         expect(res.status).toEqual(204)
-        console.info(res)
         expect(res.header["x-authorization"]).toBeDefined()
-        // console.log = () => { }
+        console.log = () => { }
         udb.teardown()
 
     })

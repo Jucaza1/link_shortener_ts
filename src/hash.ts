@@ -9,7 +9,7 @@ export class Hasher {
     constructor(base?: string, digits?: number) {
         this.base = base ?? this.base
         this.digits = Math.trunc(digits ?? this.digits)
-        if (this.digits < 1) throw "digits must be at least 1"
+        if (this.digits < 1) throw "haser digits must be at least 1"
         this.hash = this.hash.bind(this)
         this.unhash = this.unhash.bind(this)
 
@@ -60,18 +60,3 @@ export class Hasher {
         return result
     }
 }
-// export function run() {
-//     let n
-//     let res: boolean = true
-//     for (n = 0; n < pool.length ** 1; n++) {
-//         console.log(`${n} hash= ${hash(n)}, unhash= ${unhash(hash(n))}`)
-//         if (unhash(hash(n)) !== n) res = false
-//     }
-//     console.log(res)
-//     console.log(pool.length)
-//     console.log(unhash(hash(0)) == 0)
-//     console.log(hash(36))
-//     console.log(hash(36 ** 2))
-//     console.log(hash(798323))
-//     console.log(hash(36 ** 5 - 1))
-// }
