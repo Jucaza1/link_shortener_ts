@@ -41,41 +41,39 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
 
     getLinksByUser(UserID: string): Array<Link> {
-        const res = this.database.prepare(`
+        const res = this.database.prepare<[string], Link>(`
         SELECT * FROM Link WHERE userID == ?`).all(UserID)
         if (res === undefined) {
             return []
         }
-        if ((res as Array<Link>).length === 0) {
+        if (res.length === 0) {
             return []
         }
-        let linkRes = res as Array<Link>
-        for (let l of linkRes) {
+        for (let l of res) {
             l.status = l.status == true
             l.deleted = l.deleted == true
         }
-        return linkRes
+        return res
     }
 
     getLinkByID(id: number): Link | undefined {
-        const res = this.database.prepare(`
+        const res = this.database.prepare<[number], Link>(`
         SELECT * FROM Link WHERE ID == ?`).get(id)
         if (res === undefined) {
             return undefined
         }
-        let linkRes = res as Link
-        linkRes.status = linkRes.status == true
-        linkRes.deleted = linkRes.deleted == true
-        return linkRes
+        res.status = res.status == true
+        res.deleted = res.deleted == true
+        return res
     }
 
     createLink(link: Link): Link | undefined {
-        const stmt = this.database.prepare(`
+        const stmt = this.database.prepare<[string | null, string, string, number, number, string, string, string]>(`
             INSERT INTO Link (userID, url, short, status, deleted,
             createdAt, deletedAt, expiresAt)
             VALUES (?,?,?,?,?,?,?,?)
             `)
-        const info = stmt.run(link.userID == ""? null:link.userID, link.url, link.short,
+        const info = stmt.run(link.userID == "" ? null : link.userID, link.url, link.short,
             link.status ? 1 : 0, link.deleted ? 1 : 0, link.createdAt, link.deletedAt, link.expiresAt)
         if (info === undefined) return undefined
         if (info.changes < 1) return undefined
@@ -84,7 +82,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
 
     cancelLinkByID(id: number): boolean {
-        const stmt = this.database.prepare(`
+        const stmt = this.database.prepare<[string, number]>(`
             UPDATE Link SET deleted = 1, deletedAt = ? WHERE ID == ?
             `)
         const deletedAt: Link["deletedAt"] = (new Date())
@@ -96,7 +94,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
 
     deleteLinkByID(id: number): boolean {
-        const stmt = this.database.prepare(`
+        const stmt = this.database.prepare<[number]>(`
             DELETE FROM Link WHERE ID == ?
             `)
         const info = stmt.run(id)
@@ -106,81 +104,79 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
 
     serveLink(short: string): string | undefined {
-        const res = this.database.prepare(`
+        const res = this.database.prepare<[string], LinkParams>(`
         SELECT url FROM Link WHERE short == ?`).get(short)
         if (res === undefined) {
             return undefined
         }
-        const { url: url } = res as LinkParams
+        const { url: url } = res
         return url
     }
 
     getUsers(): Array<User> {
-        const res = this.database.prepare(`
+        const res = this.database.prepare<[], User>(`
         SELECT * FROM User`).all()
         if (res === undefined) {
             return []
         }
-        if ((res as Array<User>).length === 0) {
+        if (res.length === 0) {
             return []
         }
-        let userRes = res as Array<User>
-        for (let u of userRes) {
+        for (let u of res) {
             u.isAdmin = u.isAdmin == true
             u.deleted = u.deleted == true
             u.guest = u.guest == true
         }
-        return userRes
+        return res
     }
 
     getUserByID(id: string): User | undefined {
-        const res = this.database.prepare(`
+        const res = this.database.prepare<[string], User>(`
         SELECT * FROM User WHERE ID == ?`).get(id)
         if (res === undefined) {
             return undefined
         }
-        let userRes = res as User
-        userRes.isAdmin = userRes.isAdmin == true
-        userRes.deleted = userRes.deleted == true
-        userRes.guest = userRes.guest == true
-        return userRes
+        res.isAdmin = res.isAdmin == true
+        res.deleted = res.deleted == true
+        res.guest = res.guest == true
+        return res
     }
 
     getEncryptedPasswordByID(id: string): string | undefined {
-        const res = this.database.prepare(`
+        const res = this.database.prepare<[string], UserEncryptedPW>(`
         SELECT encryptedPassword FROM User WHERE ID == ?`).get(id)
-        if (res === undefined || (res as UserEncryptedPW).encryptedPassword === undefined) return undefined
-        return (res as UserEncryptedPW).encryptedPassword as string | undefined
+        if (res === undefined || res.encryptedPassword === undefined) return undefined
+        return res.encryptedPassword
     }
 
     getUserByEmail(email: string): User | undefined {
-        const res = this.database.prepare(`
+        const res = this.database.prepare<[string], User>(`
         SELECT * FROM User WHERE email == ?`).get(email)
         if (res === undefined) {
             return undefined
         }
-        let userRes = res as User
-        userRes.isAdmin = userRes.isAdmin == true
-        userRes.deleted = userRes.deleted == true
-        userRes.guest = userRes.guest == true
-        return userRes
+        res.isAdmin = res.isAdmin == true
+        res.deleted = res.deleted == true
+        res.guest = res.guest == true
+        return res
     }
 
     getUserByUsername(username: string): User | undefined {
-        const res = this.database.prepare(`
+        const res = this.database.prepare<[string], User>(`
         SELECT * FROM User WHERE username == ?`).get(username)
         if (res === undefined) {
             return undefined
         }
-        let userRes = res as User
-        userRes.isAdmin = userRes.isAdmin == true
-        userRes.deleted = userRes.deleted == true
-        userRes.guest = userRes.guest == true
-        return userRes
+        res.isAdmin = res.isAdmin == true
+        res.deleted = res.deleted == true
+        res.guest = res.guest == true
+        return res
     }
 
     createUser(user: User): User | undefined {
-        const stmt = this.database.prepare(`
+        const stmt = this.database.prepare<
+            [string, number, string, string, number,
+                string, string, string, number]>(`
             INSERT INTO User (ID, guest, username, email, deleted,
             createdAt, deletedAt, encryptedPassword, isAdmin)
             VALUES (?,?,?,?,?,?,?,?,?)
@@ -194,7 +190,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
 
     cancelUserByID(id: string): boolean {
-        const stmt = this.database.prepare(`
+        const stmt = this.database.prepare<[string, string]>(`
             UPDATE User SET deleted = 1, deletedAt = ? WHERE ID == ?
             `)
         const deletedAt: User["deletedAt"] = (new Date())
@@ -206,7 +202,7 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
 
     deleteUserByID(id: string): boolean {
-        const stmt = this.database.prepare(`
+        const stmt = this.database.prepare<[string]>(`
             DELETE FROM User WHERE ID == ?
             `)
         const info = stmt.run(id)
@@ -216,49 +212,48 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
     }
 
     trackServe(short: string): boolean {
-        let stmt = this.database.prepare(`
+        const stmt = this.database.prepare<string>(`
             UPDATE TrackLink SET activity = activity + 1 WHERE short == ?
             `)
         let info = stmt.run(short)
         if (info !== undefined && info.changes > 0) return true
 
-        stmt = this.database.prepare(`
+        const stmt2 = this.database.prepare<[string, number]>(`
             INSERT INTO TrackLink (short, activity)
             VALUES (?,?)
             `)
-        info = stmt.run(short, 1)
+        info = stmt2.run(short, 1)
         if (info === undefined || info.changes < 1) return false
         return true
     }
 
     getLastLinkID(): number {
-        const res = this.database.prepare(`
-        SELECT max(ID) FROM Link`).get()
         type maxId = {
             "max(ID)": number
         }
+        const res = this.database.prepare<[], maxId>(`
+        SELECT max(ID) FROM Link`).get()
         if (res === undefined) {
             return -1
         }
-        const { "max(ID)": id } = res as maxId
+        const { "max(ID)": id } = res
         return id
     }
 
     getLinkByShort(short: string): Link | undefined {
-        const res = this.database.prepare(`
+        const res = this.database.prepare<[string], Link>(`
         SELECT * FROM Link WHERE short == ?`).get(short)
         if (res === undefined) {
             return undefined
         }
-        let linkRes = res as Link
-        linkRes.status = linkRes.status == true
-        linkRes.deleted = linkRes.deleted == true
-        return linkRes
+        res.status = res.status == true
+        res.deleted = res.deleted == true
+        return res
     }
 
     teardown() {
         try {
-            this.database.exec('DELETE FROM Link;DELETE FROM User;  DELETE FROM TrackLink;')
+            this.database.exec('DELETE FROM Link; DELETE FROM User;  DELETE FROM TrackLink;')
         } catch (err) {
             console.error('error deleting tables:', err);
             return
