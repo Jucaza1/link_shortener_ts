@@ -1,13 +1,13 @@
 import { json, Router } from "express"
 import rateLimit from "express-rate-limit"
 
-import { LinkHandler, LSHandler, UserHandler, } from "./handlers/handlers.js"
-import { adminMiddleware, AuthHandler } from "./handlers/middlewares.js"
-import * as db from "./db/main.js"
-import { ControllerImp, } from "./controllers.js"
-import { Hasher } from "./hash.js"
-import { PasswordEncrypter } from "./types.js"
-import { Auther } from "./auth.js"
+import { LinkHandler, LSHandler, UserHandler, } from "./handlers/handlers"
+import { adminMiddleware, AuthHandler } from "./handlers/middlewares"
+import * as db from "./db/main"
+import { ControllerImp, } from "./controllers"
+import { Hasher } from "./hash"
+import { PasswordEncrypter } from "./types"
+import { Auther } from "./auth"
 
 export function createRouter(
     ldb: db.LinkDB,

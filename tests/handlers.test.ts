@@ -1,14 +1,14 @@
 import { describe, test, expect } from "@jest/globals"
 import supertest from "supertest"
 import express, { json } from "express"
-import { UserParams } from "../src/types.js"
-import { AuthHandler } from "../src/handlers/middlewares.js"
-import { JWT_Auther } from "../src/auth.js"
-import { ControllerImp } from "../src/controllers.js"
-import { PasswordEncrypter } from "../src/types.js"
-import { createUserDB, createLinkDB } from "./db.test.js"
-import * as db from "../src/db/main.js"
-import { Hasher } from "../src/hash.js"
+import { UserParams } from "../src/types"
+import { AuthHandler } from "../src/handlers/middlewares"
+import { JWT_Auther } from "../src/auth"
+import { ControllerImp } from "../src/controllers"
+import { PasswordEncrypter } from "../src/types"
+import { createUserDB, createLinkDB } from "./db.test"
+import * as db from "../src/db/main"
+import { Hasher } from "../src/hash"
 
 export function createAuthHandler(udb: db.UserDB, ldb: db.LinkDB): AuthHandler {
     const encrypter = new PasswordEncrypter('pwdsecret')

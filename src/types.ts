@@ -2,7 +2,7 @@ import z from "zod"
 import crypto from 'crypto';
 import { v4 as uuidv4 } from "uuid"
 
-import { errorSource, Operation } from "./error.js"
+import { errorSource, Operation } from "./error"
 
 export const UserSchema = z.object({
     ID: z.string().uuid(),

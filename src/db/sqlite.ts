@@ -2,8 +2,8 @@ import BetterSqlite3 from "better-sqlite3"
 import cron from 'node-cron'
 import { existsSync, unlinkSync } from "fs"
 
-import * as db from "./main.js"
-import { Link, LinkParams, User, UserEncryptedPW } from "../types.js"
+import * as db from "./main"
+import { Link, LinkParams, User, UserEncryptedPW } from "../types"
 
 export class SqliteDB implements db.LinkDB, db.UserDB {
     database: BetterSqlite3.Database

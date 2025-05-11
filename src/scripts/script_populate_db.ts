@@ -1,5 +1,5 @@
-import * as db from "../db/sqlite.js"
-import * as types from "../types.js"
+import * as db from "../db/sqlite"
+import * as types from "../types"
 
 //TODO: handle secrets with ENV vars
 const dbloc = "./shortener.db"

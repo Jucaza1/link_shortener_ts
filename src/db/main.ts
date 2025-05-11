@@ -1,4 +1,4 @@
-import * as types from "../types.js"
+import * as types from "../types"
 
 export interface UserDB {
     getUsers(): Array<types.User>

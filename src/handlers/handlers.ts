@@ -1,9 +1,9 @@
 import { Request, Response } from "express"
 import { constants as httpStatus } from "http2"
 
-import * as types from "../types.js"
-import { UserController, LinkServerController, LinkController } from "../controllers.js"
-import { Operation } from "../error.js"
+import * as types from "../types"
+import { UserController, LinkServerController, LinkController } from "../controllers"
+import { Operation } from "../error"
 
 export class UserHandler {
     uController: UserController

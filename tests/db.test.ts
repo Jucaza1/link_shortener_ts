@@ -1,7 +1,7 @@
 import { describe, test, expect } from '@jest/globals'
-import { SqliteDB } from "../src/db/sqlite.js"
-import * as db from "../src/db/main.js"
-import * as types from "../src/types.js"
+import { SqliteDB } from "../src/db/sqlite"
+import * as db from "../src/db/main"
+import * as types from "../src/types"
 export function createUserDB(): db.UserDB {
     return new SqliteDB("test_db.db")
 }

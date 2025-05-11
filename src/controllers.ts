@@ -1,7 +1,7 @@
-import * as db from "./db/main.js";
-import * as types from "./types.js"
-import { errorSource, Operation } from "./error.js";
-import { Hasher } from "./hash.js";
+import * as db from "./db/main";
+import * as types from "./types"
+import { errorSource, Operation } from "./error";
+import { Hasher } from "./hash";
 
 export interface UserController {
     getUsers(): Operation<Array<types.User> | undefined>

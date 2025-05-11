@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from "express"
 import { constants as httpStatus } from "http2"
 
-import { Auther } from "../auth.js"
-import { UserController } from "../controllers.js"
-import { PasswordEncrypter, User, User_DTO, User_Middleware, errorMsg } from "../types.js"
-import { Operation } from "../error.js"
+import { Auther } from "../auth"
+import { UserController } from "../controllers"
+import { PasswordEncrypter, User, User_DTO, User_Middleware, errorMsg } from "../types"
+import { Operation } from "../error"
 
 export class AuthHandler {
     auther: Auther
