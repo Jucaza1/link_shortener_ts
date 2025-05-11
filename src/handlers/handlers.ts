@@ -2,13 +2,13 @@ import { Request, Response } from "express"
 import { constants as httpStatus } from "http2"
 
 import * as types from "../types"
-import { UserController, LinkServerController, LinkController } from "../controllers"
+import { UserService, LinkServerService, LinkService } from "../services"
 import { Operation } from "../error"
 
 export class UserHandler {
-    uController: UserController
-    constructor(uController: UserController) {
-        this.uController = uController
+    uService: UserService
+    constructor(uService: UserService) {
+        this.uService = uService
         this.handleGetUsers = this.handleGetUsers.bind(this)
         this.handleGetUserByID = this.handleGetUserByID.bind(this)
         this.handleGetMyUser = this.handleGetMyUser.bind(this)
@@ -34,7 +34,7 @@ export class UserHandler {
                 .json(types.errorMsg("invalid id"))
             return
         }
-        const operation = this.uController.getUserByID(user.ID)
+        const operation = this.uService.getUserByID(user.ID)
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
                 .json(types.errorMsg(operation.msg as string))
@@ -44,7 +44,7 @@ export class UserHandler {
     }
 
     handleGetUsers(_req: Request, res: Response) {
-        const operation = this.uController.getUsers()
+        const operation = this.uService.getUsers()
         if (!operation.success || !operation.data) {
             res
                 .status(httpStatus.HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -63,7 +63,7 @@ export class UserHandler {
                 .json(types.errorMsg("invalid id"))
             return
         }
-        const operation = this.uController.getUserByID(id as string)
+        const operation = this.uService.getUserByID(id as string)
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
                 .json(types.errorMsg(operation.msg as string))
@@ -80,7 +80,7 @@ export class UserHandler {
                 .json(types.errorMsg("invalid id"))
             return
         }
-        const operation = this.uController.getUserByEmail(email as string)
+        const operation = this.uService.getUserByEmail(email as string)
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
                 .json(types.errorMsg(operation.msg as string))
@@ -97,7 +97,7 @@ export class UserHandler {
                 .json(types.errorMsg("invalid id"))
             return
         }
-        const operation = this.uController.getUserByUsername(username as string)
+        const operation = this.uService.getUserByUsername(username as string)
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
                 .json(types.errorMsg(operation.msg as string))
@@ -121,7 +121,7 @@ export class UserHandler {
                 .json(types.errorMsg("invalid params"))
             return
         }
-        const operation = this.uController.createUser(user)
+        const operation = this.uService.createUser(user)
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
                 .json(types.errorMsg(operation.msg as string))
@@ -143,7 +143,7 @@ export class UserHandler {
                 .json(types.errorMsg("invalid id"))
             return
         }
-        const operation = this.uController.createAdmin(user)
+        const operation = this.uService.createAdmin(user)
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
                 .json(types.errorMsg(operation.msg as string))
@@ -163,7 +163,7 @@ export class UserHandler {
         }
         let operation: Operation<any>
         if (!user?.isAdmin && id === user?.ID || user.isAdmin) {
-            operation = this.uController.cancelUserByID(id, user.isAdmin)
+            operation = this.uService.cancelUserByID(id, user.isAdmin)
         } else {
             res
                 .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
@@ -189,7 +189,7 @@ export class UserHandler {
         }
         let operation: Operation<any>
         if (!user?.isAdmin && id === user?.ID || user.isAdmin) {
-            operation = this.uController.deleteUserByID(id, user.isAdmin)
+            operation = this.uService.deleteUserByID(id, user.isAdmin)
         } else {
             res
                 .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
@@ -206,8 +206,8 @@ export class UserHandler {
 }
 
 export class LinkHandler {
-    linkController: LinkController
-    constructor(linkController: LinkController) {
+    linkController: LinkService
+    constructor(linkController: LinkService) {
         this.linkController = linkController
         this.handleCreateLink = this.handleCreateLink.bind(this)
         this.handleCreateAnonymousLink = this.handleCreateAnonymousLink.bind(this)
@@ -359,8 +359,8 @@ export class LinkHandler {
 }
 
 export class LSHandler {
-    linkSController: LinkServerController
-    constructor(linkSController: LinkServerController) {
+    linkSController: LinkServerService
+    constructor(linkSController: LinkServerService) {
         this.linkSController = linkSController
         this.handleServeLink = this.handleServeLink.bind(this)
     }

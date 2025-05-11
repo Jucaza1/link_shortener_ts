@@ -2,17 +2,17 @@ import { NextFunction, Request, Response } from "express"
 import { constants as httpStatus } from "http2"
 
 import { Auther } from "../auth"
-import { UserController } from "../controllers"
+import { UserService } from "../services"
 import { PasswordEncrypter, User, User_DTO, User_Middleware, errorMsg } from "../types"
 import { Operation } from "../error"
 
 export class AuthHandler {
     auther: Auther
-    uController: UserController
+    uService: UserService
     encrypter: PasswordEncrypter
-    constructor(auther: Auther, uController: UserController, encrypter: PasswordEncrypter) {
+    constructor(auther: Auther, uService: UserService, encrypter: PasswordEncrypter) {
         this.auther = auther
-        this.uController = uController
+        this.uService = uService
         this.encrypter = encrypter
         this.authenticate = this.authenticate.bind(this)
         this.validateMiddleware = this.validateMiddleware.bind(this)
@@ -35,21 +35,21 @@ export class AuthHandler {
             password: req.body.password,
         }
         if (user.username !== undefined) {
-            operation = this.uController.getUserByUsername(user.username)
+            operation = this.uService.getUserByUsername(user.username)
         } else {
             if (user.email === undefined) {
                 res.status(httpStatus.HTTP_STATUS_BAD_REQUEST)
                     .json(errorMsg("invalid credentials"))
                 return
             }
-            operation = this.uController.getUserByEmail(user.email)
+            operation = this.uService.getUserByEmail(user.email)
         }
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
                 .json(errorMsg("incorrect credentials"))
             return
         }
-        const operation2 = this.uController.getEncrytpedPasswordByID(operation.data.ID)
+        const operation2 = this.uService.getEncrytpedPasswordByID(operation.data.ID)
         if (operation2.success === false || operation2.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
                 .json(errorMsg("incorrect credentials"))
@@ -77,7 +77,7 @@ export class AuthHandler {
                 .json(errorMsg("invalid credentials"))
             return
         }
-        const operation = this.uController.getUserByID(decoded?.ID, true)
+        const operation = this.uService.getUserByID(decoded?.ID, true)
         if (operation.success === false || operation.data === undefined) {
             res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
                 .json(errorMsg("invalid credentials"))

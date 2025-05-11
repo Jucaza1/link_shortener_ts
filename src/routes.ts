@@ -4,7 +4,7 @@ import rateLimit from "express-rate-limit"
 import { LinkHandler, LSHandler, UserHandler, } from "./handlers/handlers"
 import { adminMiddleware, AuthHandler } from "./handlers/middlewares"
 import * as db from "./db/main"
-import { ControllerImp, } from "./controllers"
+import { ServiceImpl, } from "./services"
 import { Hasher } from "./hash"
 import { PasswordEncrypter } from "./types"
 import { Auther } from "./auth"
@@ -16,8 +16,8 @@ export function createRouter(
     encrypter: PasswordEncrypter,
     auther: Auther
 ): Router {
-    const uController = new ControllerImp(udb, ldb, hasher, encrypter)
-    const lController = new ControllerImp(udb, ldb, hasher, encrypter)
+    const uController = new ServiceImpl(udb, ldb, hasher, encrypter)
+    const lController = new ServiceImpl(udb, ldb, hasher, encrypter)
     const v1Router = Router()
     const authHandler = new AuthHandler(auther, uController, encrypter)
     const uHandler = new UserHandler(uController)
@@ -66,7 +66,7 @@ export function createLinkServer(
 
 ): Router {
     const linkRouter = Router()
-    const lSHandler = new LSHandler(new ControllerImp(udb, ldb, hasher, encrypter))
+    const lSHandler = new LSHandler(new ServiceImpl(udb, ldb, hasher, encrypter))
     linkRouter.get("/:short", lSHandler.handleServeLink)
     return linkRouter
 }

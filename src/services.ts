@@ -3,7 +3,7 @@ import * as types from "./types"
 import { errorSource, Operation } from "./error";
 import { Hasher } from "./hash";
 
-export interface UserController {
+export interface UserService {
     getUsers(): Operation<Array<types.User> | undefined>
     getUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
     getEncrytpedPasswordByID(id: string): Operation<string | undefined>
@@ -15,7 +15,7 @@ export interface UserController {
     deleteUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
 }
 
-export interface LinkController {
+export interface LinkService {
     getLinkByID(id: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
     getLinksByUser(id: string, forAdmin?: boolean): Operation<Array<types.Link_DTO> | Array<types.Link>>
     createLink(url: types.LinkParams, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
@@ -24,12 +24,12 @@ export interface LinkController {
     cancelLinkByID(id: number, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
 }
 
-export interface LinkServerController {
+export interface LinkServerService {
     serveLink(short: string): Operation<string | undefined>
     trackLink(short: string): Operation<boolean>
 }
 
-export class ControllerImp implements UserController, LinkController, LinkServerController {
+export class ServiceImpl implements UserService, LinkService, LinkServerService {
     udb: db.UserDB
     ldb: db.LinkDB
     haser: Hasher
