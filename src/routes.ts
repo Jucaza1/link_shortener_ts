@@ -8,7 +8,9 @@ import { ServiceImpl, } from "./services"
 import { Hasher } from "./hash"
 import { PasswordEncrypter } from "./types/entities"
 import { Auther } from "./auth"
+import { jsonMiddleware } from "./handlers/json-filter"
 
+// Managements routes
 export function createRouter(
     ldb: db.LinkDB,
     udb: db.UserDB,
@@ -24,7 +26,7 @@ export function createRouter(
     const lHandler = new LinkHandler(lController)
     const limiter = rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 5, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+        max: 5, // Limit each IP to X requests per `window` (here, per 15 minutes)
         message: 'Too many requests from this IP, please try again after 15 minutes',
         standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
         legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -32,10 +34,10 @@ export function createRouter(
 
     v1Router.use(json())
 
-    v1Router.post("/users", uHandler.handleCreateUser)
-    v1Router.post("/login", authHandler.authenticate)
+    v1Router.post("/users", jsonMiddleware, uHandler.handleCreateUser)
+    v1Router.post("/login", jsonMiddleware, authHandler.authenticate)
     //endpoint for anonymous link creation with rate limiter
-    v1Router.post("/guestlink", limiter, lHandler.handleCreateAnonymousLink)
+    v1Router.post("/guestlink", limiter, jsonMiddleware, lHandler.handleCreateAnonymousLink)
 
     const validateRouter = Router()
     v1Router.use("/", authHandler.validateMiddleware, validateRouter)
@@ -46,18 +48,20 @@ export function createRouter(
     validateRouter.get("/me", uHandler.handleGetMyUser)
     validateRouter.delete("/users/:id", uHandler.handleCancelUserByID)
     validateRouter.get("/users/:id/link", lHandler.handleGetLinksByUser)
-    validateRouter.post("/links/", lHandler.handleCreateLink)
+    validateRouter.post("/links/", jsonMiddleware, lHandler.handleCreateLink)
     validateRouter.get("/links/:id", lHandler.handleGetLinkById)
     validateRouter.delete("/links/:id", lHandler.handleCancelLinkByID)
+
     //AMIN only routes with a middleware filter
     validateRouter.get("/users", adminMiddleware, uHandler.handleGetUsers)
-    validateRouter.post("/users/admin", adminMiddleware, uHandler.handleCreateAdmin)
+    validateRouter.post("/users/admin", jsonMiddleware, adminMiddleware, uHandler.handleCreateAdmin)
     validateRouter.delete("/users/:id/delete", adminMiddleware, uHandler.handleDeleteUserByID)
     validateRouter.delete("/links/:id/delete", adminMiddleware, lHandler.handleDeleteLinkByID)
 
     return v1Router
 }
 
+//Redirect server to the original link
 export function createLinkServer(
     ldb: db.LinkDB,
     udb: db.UserDB,

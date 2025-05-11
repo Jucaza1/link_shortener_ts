@@ -1,4 +1,4 @@
-import { StoreErrorCode } from './types/result';
+import { StoreErrorCode } from './result';
 import { SqliteError } from 'better-sqlite3';
 export function sqlCatchToStoreError(e: unknown): StoreErrorCode {
     if (e instanceof SqliteError){

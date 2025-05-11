@@ -1,0 +1,25 @@
+services:
+  link-sortener:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=3000
+      - JWT_SECRET=jwtsecret
+      - PASSWORD_SECRET=passwordsecret
+      - DB_LOCATION=/app/data/database.db
+      - DB_SEED=true
+      - DB_RESET
+      - USERNAME_ADMIN=admin
+      - USER_ADMIN_EMAIL=admin@admin.com
+      - USER_ADMIN_PASSWORD=adminadmin
+    command: sh -c "node /app/build/src/main.js"
+    volumes:
+      - db_data:/app/data/
+volumes:
+  db_data:
+    driver: local

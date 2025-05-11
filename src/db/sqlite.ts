@@ -2,7 +2,7 @@ import BetterSqlite3 from "better-sqlite3"
 import cron from 'node-cron'
 import { existsSync, unlinkSync } from "fs"
 
-import { sqlCatchToStoreError } from "../db-exception"
+import { sqlCatchToStoreError } from "../types/db-exception"
 import * as db from "./main"
 import { Link, LinkParams, User, UserEncryptedPW } from "../types/entities"
 import { ResultStore, StoreErrorCode } from "../types/result"
