@@ -1,9 +1,11 @@
 import { Request, Response } from "express"
 import { constants as httpStatus } from "http2"
 
-import * as types from "../types"
+import * as types from "../types/entities"
 import { UserService, LinkServerService, LinkService } from "../services"
-import { Operation } from "../error"
+import { NextFunction } from "../types/express"
+import { ResultHttp } from "../types/result"
+import { User, User_DTO } from "../types/entities"
 
 export class UserHandler {
     uService: UserService
@@ -20,188 +22,152 @@ export class UserHandler {
         this.handleDeleteUserByID = this.handleDeleteUserByID.bind(this)
     }
 
-    handleGetMyUser(_req: Request, res: Response) {
+    handleGetMyUser(_req: Request, res: Response, next: NextFunction) {
         const user: types.User_Middleware = res.locals.user
-        if (!user) {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+        if (!user || user.ID === undefined || (typeof user.ID) !== "string" || user.ID === "") {
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid user"] } })
             return
         }
-        if (user.ID === undefined || (typeof user.ID) !== "string" || user.ID === "") {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+        const result = this.uService.getUserByID(user.ID)
+        if (!result.ok) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        const operation = this.uService.getUserByID(user.ID)
-        if (operation.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
-            return
-        }
-        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_OK).json(result.data)
     }
 
-    handleGetUsers(_req: Request, res: Response) {
-        const operation = this.uService.getUsers()
-        if (!operation.success || !operation.data) {
-            res
-                .status(httpStatus.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-                .json(types.errorMsg(operation.msg as string))
+    handleGetUsers(_req: Request, res: Response, next: NextFunction) {
+        const result = this.uService.getUsers()
+        if (!result.ok || result.data === undefined) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_OK).json(result.data)
     }
 
-    handleGetUserByID(req: Request, res: Response) {
+    handleGetUserByID(req: Request, res: Response, next: NextFunction) {
         const params = req.params
         const id = params.id
         if (id === undefined || (typeof id) !== "string" || id === "") {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid id"] } })
             return
         }
-        const operation = this.uService.getUserByID(id as string)
-        if (operation.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
+        const result = this.uService.getUserByID(id as string)
+        if (!result.ok || result.data === undefined) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_OK).json(result.data)
     }
 
-    handleGetUserByEmail(req: Request, res: Response) {
-        const email = req.body.email
+    handleGetUserByEmail(req: Request, res: Response, next: NextFunction) {
+        const email = req.body?.email
         if (email === undefined || (typeof email) !== "string" || email === "") {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid email"] } })
             return
         }
-        const operation = this.uService.getUserByEmail(email as string)
-        if (operation.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
+        const result = this.uService.getUserByEmail(email as string)
+        if (!result.ok || result.data === undefined) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_OK).json(result.data)
     }
 
-    handleGetUserByUsername(req: Request, res: Response) {
-        const username = req.params.username
+    handleGetUserByUsername(req: Request, res: Response, next: NextFunction) {
+        const username = req.params?.username
         if (username === undefined || (typeof username) !== "string" || username === "") {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid username"] } })
             return
         }
         const operation = this.uService.getUserByUsername(username as string)
-        if (operation.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
+        if (!operation.ok || operation.data === undefined) {
+            next({ httpError: operation.err!, exception: operation.exception })
             return
         }
         res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
     }
 
-    handleCreateUser(req: Request, res: Response) {
+    handleCreateUser(req: Request, res: Response, next: NextFunction) {
         const params = req.body
+        if (!params) {
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid params"] } })
+            return
+        }
         const user: types.UserParams = {
             username: params.username,
             email: params.email,
             password: params.password,
         }
-        if (!user.username || user.username === "" ||
-            !user.email || user.email === "" ||
-            !user.password || user.password === "") {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid params"))
+        const result = this.uService.createUser(user)
+        if (!result.ok || result.data === undefined) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        const operation = this.uService.createUser(user)
-        if (operation.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
-            return
-        }
-        res.status(httpStatus.HTTP_STATUS_CREATED).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_CREATED).json(result.data)
     }
 
-    handleCreateAdmin(req: Request, res: Response) {
+    handleCreateAdmin(req: Request, res: Response, next: NextFunction) {
         const params = req.body
+        if (!params) {
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid params"] } })
+            return
+        }
         const user: types.UserParams = {
             username: params.username,
             email: params.email,
             password: params.password,
         }
-        if (!user.username || !user.email || !user.password) {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+        const result = this.uService.createAdmin(user)
+        if (!result.ok || result.data === undefined) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        const operation = this.uService.createAdmin(user)
-        if (operation.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
-            return
-        }
-        res.status(httpStatus.HTTP_STATUS_CREATED).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_CREATED).json(result.data)
     }
 
-    handleCancelUserByID(req: Request, res: Response) {
+    handleCancelUserByID(req: Request, res: Response, next: NextFunction) {
         const id = req.params.id
         const user: types.User_Middleware = res.locals.user
         if (!user) {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+            next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["unauthorized"] } })
             return
         }
-        let operation: Operation<any>
+        let result: ResultHttp<User | User_DTO>
         if (!user?.isAdmin && id === user?.ID || user.isAdmin) {
-            operation = this.uService.cancelUserByID(id, user.isAdmin)
+            // only admin can cancel any user
+            result = this.uService.cancelUserByID(id, user.isAdmin)
         } else {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid id"] } })
             return
         }
-        if (!operation.success || !operation.data) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
+        if (!result.ok || result.data === undefined) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_OK).json(result.data)
     }
 
-    handleDeleteUserByID(req: Request, res: Response) {
+    handleDeleteUserByID(req: Request, res: Response, next: NextFunction) {
         const id = req.params.id
         const user: types.User_Middleware = res.locals.user
         if (!user) {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+            next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["unauthorized"] } })
             return
         }
-        let operation: Operation<any>
+        let result: ResultHttp<User | User_DTO>
         if (!user?.isAdmin && id === user?.ID || user.isAdmin) {
-            operation = this.uService.deleteUserByID(id, user.isAdmin)
+            // only admin can delete any user
+            result = this.uService.deleteUserByID(id, user.isAdmin)
         } else {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+            next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["unauthorized"] } })
             return
         }
-        if (!operation.success || !operation.data) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
+        if (!result.ok || !result.data) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_OK).json(result.data)
     }
 }
 
@@ -217,143 +183,128 @@ export class LinkHandler {
         this.handleGetLinksByUser = this.handleGetLinksByUser.bind(this)
     }
 
-    handleCreateLink(req: Request, res: Response) {
+    handleCreateLink(req: Request, res: Response, next: NextFunction) {
         const params = req.body
+        if (params === undefined) {
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid params"] } })
+            return
+        }
         const user: types.User_Middleware = res.locals.user
+        if (!user) {
+            next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["unauthorized"] } })
+            return
+        }
         const link: types.LinkParams = {
             url: params.url,
         }
         if (!link.url || !user) {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid params"] } })
             return
         }
         const hasHttpPrefix = /^https?:\/\//i.test(link.url);
         link.url = hasHttpPrefix ? link.url : `http://${link.url}`;
 
-        const operation = this.linkController.createLink(link, user?.ID, user?.isAdmin)
-        if (operation.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
+        const result = this.linkController.createLink(link, user?.ID, user?.isAdmin)
+        if (result.ok || result.data === undefined) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        res.status(httpStatus.HTTP_STATUS_CREATED).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_CREATED).json(result.data)
     }
 
-    handleCreateAnonymousLink(req: Request, res: Response) {
+    handleCreateAnonymousLink(req: Request, res: Response, next: NextFunction) {
         const params = req.body
+        if (params === undefined) {
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid params"] } })
+            return
+        }
         const link: types.LinkParams = {
             url: params.url,
         }
         const hasHttpPrefix = /^https?:\/\//i.test(link.url);
         link.url = hasHttpPrefix ? link.url : `http://${link.url}`;
 
-        const operation = this.linkController.createAnonymousLink(link)
-        if (operation.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
+        const result = this.linkController.createAnonymousLink(link)
+        if (!result.ok || result.data === undefined) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        res.status(httpStatus.HTTP_STATUS_CREATED).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_CREATED).json(result.data)
     }
 
-    handleDeleteLinkByID(req: Request, res: Response) {
-        const id = req.params.id
+    handleDeleteLinkByID(req: Request, res: Response, next: NextFunction) {
+        const id = req.params?.id
         const user: types.User_Middleware = res.locals.user
         if (!user) {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+            next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["unauthorized"] } })
             return
         }
-        let operation: Operation<any>
         const parsedID = parseInt(id)
-        if (!isNaN(parsedID)) {
-            operation = this.linkController.deleteLinkByID(parsedID, user.ID, user.isAdmin)
-        } else {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+        if (isNaN(parsedID)) {
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid id"] } })
             return
         }
-        if (!operation.success || !operation.data) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
+        const result = this.linkController.deleteLinkByID(parsedID, user.ID, user.isAdmin)
+        if (!result.ok || !result.data) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_OK).json(result.data)
     }
 
-    handleCancelLinkByID(req: Request, res: Response) {
-        const id = req.params.id
+    handleCancelLinkByID(req: Request, res: Response, next: NextFunction) {
+        const id = req.params?.id
         const user: types.User_Middleware = res.locals.user
         if (!user) {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid user id"))
+            next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["unauthorized"] } })
             return
         }
-        let operation: Operation<any>
         const parsedID = parseInt(id)
-        if (!isNaN(parsedID)) {
-            operation = this.linkController.cancelLinkByID(parsedID, user.ID, user.isAdmin)
-        } else {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+        if (isNaN(parsedID)) {
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid id"] } })
             return
         }
-        if (!operation.success || !operation.data) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
+        const result = this.linkController.cancelLinkByID(parsedID, user.ID, user.isAdmin)
+        if (!result.ok || !result.data) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_OK).json(result.data)
     }
 
-    handleGetLinkById(req: Request, res: Response) {
+    handleGetLinkById(req: Request, res: Response, next: NextFunction) {
+        const id: string = req.params?.id
+        const user: types.User_Middleware = res.locals.user
+        if (!user) {
+            next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["unauthorized"] } })
+            return
+        }
+        const result = this.linkController.getLinkByID(id, user.isAdmin)
+        if (!result.ok || !result.data) {
+            next({ httpError: result.err!, exception: result.exception })
+            return
+        }
+        if (!user.isAdmin && result.data.userID !== user.ID) {
+            // only admin can get any user link entity
+            next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["unauthorized"] } })
+            return
+        }
+        res.status(httpStatus.HTTP_STATUS_OK).json(result.data)
+    }
+
+    handleGetLinksByUser(req: Request, res: Response, next: NextFunction) {
         const id: string = req.params.id
         const user: types.User_Middleware = res.locals.user
-        if (!user) {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid user id"))
-        }
-        const operation = this.linkController.getLinkByID(id, user.isAdmin)
-        if (!operation.success || !operation.data) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
+        if (!user || !user.isAdmin && id !== user.ID ) {
+            next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["unauthorized"] } })
             return
         }
-        if (!user.isAdmin && operation.data.userID !== user.ID) {
-            res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
-                .json(types.errorMsg("unauthorized"))
+        const result = this.linkController.getLinksByUser(id, user.isAdmin)
+        if (!result.ok || !result.data) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
-    }
-
-    handleGetLinksByUser(req: Request, res: Response) {
-        const id: string = req.params.id
-        const user: types.User_Middleware = res.locals.user
-        if (!user) {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid user id"))
-        }
-        if (!user.isAdmin && id !== user.ID) {
-            res.status(httpStatus.HTTP_STATUS_UNAUTHORIZED)
-                .json(types.errorMsg("unauthorized"))
-            return
-        }
-        const operation = this.linkController.getLinksByUser(id, user.isAdmin)
-        if (!operation.success || !operation.data) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg(operation.msg as string))
-            return
-        }
-        res.status(httpStatus.HTTP_STATUS_OK).json(operation.data)
+        res.status(httpStatus.HTTP_STATUS_OK).json(result.data)
     }
 
 }
@@ -365,23 +316,21 @@ export class LSHandler {
         this.handleServeLink = this.handleServeLink.bind(this)
     }
 
-    handleServeLink(req: Request, res: Response) {
+    handleServeLink(req: Request, res: Response, next: NextFunction) {
         const params = req.params
         if (params.short === undefined || params.short === "") {
-            res
-                .status(httpStatus.HTTP_STATUS_BAD_REQUEST)
-                .json(types.errorMsg("invalid id"))
+            next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid url"] } })
             return
         }
-        const operation = this.linkSController.serveLink(params.short)
-        if (operation.success === false || operation.data === undefined) {
-            res.status(httpStatus.HTTP_STATUS_NOT_FOUND)
-                .json(types.errorMsg("id not found"))
+        const result = this.linkSController.serveLink(params.short)
+        if (!result.ok || result.data === undefined) {
+            next({ httpError: result.err!, exception: result.exception })
             return
         }
-        res.setHeader("Location", operation.data.trim())
+        res.setHeader("Location", result.data.trim())
         res.status(httpStatus.HTTP_STATUS_PERMANENT_REDIRECT)
         res.send()
+        // update activity for the link
         this.linkSController.trackLink(params.short)
     }
 }

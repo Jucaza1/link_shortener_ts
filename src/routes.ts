@@ -6,7 +6,7 @@ import { adminMiddleware, AuthHandler } from "./handlers/middlewares"
 import * as db from "./db/main"
 import { ServiceImpl, } from "./services"
 import { Hasher } from "./hash"
-import { PasswordEncrypter } from "./types"
+import { PasswordEncrypter } from "./types/entities"
 import { Auther } from "./auth"
 
 export function createRouter(

@@ -2,8 +2,10 @@ import BetterSqlite3 from "better-sqlite3"
 import cron from 'node-cron'
 import { existsSync, unlinkSync } from "fs"
 
+import { sqlCatchToStoreError } from "../db-exception"
 import * as db from "./main"
-import { Link, LinkParams, User, UserEncryptedPW } from "../types"
+import { Link, LinkParams, User, UserEncryptedPW } from "../types/entities"
+import { ResultStore, StoreErrorCode } from "../types/result"
 
 export class SqliteDB implements db.LinkDB, db.UserDB {
     database: BetterSqlite3.Database
@@ -40,140 +42,198 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         this.init()
     }
 
-    getLinksByUser(UserID: string): Array<Link> {
-        const res = this.database.prepare<[string], Link>(`
+    getLinksByUser(UserID: string): ResultStore<Link[]> {
+        let res: Link[] | undefined
+        try {
+            res = this.database.prepare<[string], Link>(`
         SELECT * FROM Link WHERE userID == ?`).all(UserID)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+
+        }
         if (res === undefined) {
-            return []
+            return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }
         }
         if (res.length === 0) {
-            return []
+            return { ok: true, data: [] }
         }
         for (let l of res) {
             l.status = l.status == true
             l.deleted = l.deleted == true
         }
-        return res
+        return { ok: true, data: res }
     }
 
-    getLinkByID(id: number): Link | undefined {
-        const res = this.database.prepare<[number], Link>(`
+    getLinkByID(id: number): ResultStore<Link> {
+        let res: Link | undefined
+        try {
+            res = this.database.prepare<[number], Link>(`
         SELECT * FROM Link WHERE ID == ?`).get(id)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+
+        }
         if (res === undefined) {
-            return undefined
+            return { ok: false, err: { code: StoreErrorCode.notFound, msg: "not found" } }
         }
         res.status = res.status == true
         res.deleted = res.deleted == true
-        return res
+        return { ok: true, data: res }
     }
 
-    createLink(link: Link): Link | undefined {
+    createLink(link: Link): ResultStore<Link> {
         const stmt = this.database.prepare<[string | null, string, string, number, number, string, string, string]>(`
             INSERT INTO Link (userID, url, short, status, deleted,
             createdAt, deletedAt, expiresAt)
             VALUES (?,?,?,?,?,?,?,?)
             `)
-        const info = stmt.run(link.userID == "" ? null : link.userID, link.url, link.short,
-            link.status ? 1 : 0, link.deleted ? 1 : 0, link.createdAt, link.deletedAt, link.expiresAt)
-        if (info === undefined) return undefined
-        if (info.changes < 1) return undefined
+        let info: BetterSqlite3.RunResult | undefined
+        try {
+            info = stmt.run(link.userID == "" ? null : link.userID, link.url, link.short,
+                link.status ? 1 : 0, link.deleted ? 1 : 0, link.createdAt, link.deletedAt, link.expiresAt)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
+        if (info === undefined) return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }
+        if (info.changes < 1) return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }
         link.ID = info.lastInsertRowid as number
-        return link
+        return { ok: true, data: link }
     }
 
-    cancelLinkByID(id: number): boolean {
+    cancelLinkByID(id: number): ResultStore<boolean> {
         const stmt = this.database.prepare<[string, number]>(`
             UPDATE Link SET deleted = 1, deletedAt = ? WHERE ID == ?
             `)
         const deletedAt: Link["deletedAt"] = (new Date())
             .toISOString().split('T')[0]
-        const info = stmt.run(deletedAt, id)
-        if (info === undefined) return false
-        if (info.changes < 1) return false
-        return true
+        let info: BetterSqlite3.RunResult | undefined
+        try {
+            info = stmt.run(deletedAt, id)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
+        if (info === undefined) return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }
+        if (info.changes < 1) return { ok: false, err: { code: StoreErrorCode.notFound, msg: "not found" } }
+        return { ok: true, data: true }
     }
 
-    deleteLinkByID(id: number): boolean {
+    deleteLinkByID(id: number): ResultStore<boolean> {
         const stmt = this.database.prepare<[number]>(`
             DELETE FROM Link WHERE ID == ?
             `)
-        const info = stmt.run(id)
-        if (info === undefined) return false
-        if (info.changes < 1) return false
-        return true
+        let info: BetterSqlite3.RunResult | undefined
+        try {
+            info = stmt.run(id)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
+        if (info === undefined) return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }
+        if (info.changes < 1) return { ok: false, err: { code: StoreErrorCode.notFound, msg: "not found" } }
+        return { ok: true, data: true }
     }
 
-    serveLink(short: string): string | undefined {
-        const res = this.database.prepare<[string], LinkParams>(`
+    serveLink(short: string): ResultStore<string> {
+        let res: LinkParams | undefined
+        try {
+            res = this.database.prepare<[string], LinkParams>(`
         SELECT url FROM Link WHERE short == ?`).get(short)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
         if (res === undefined) {
-            return undefined
+            return { ok: false, err: { code: StoreErrorCode.notFound, msg: "not found" } }
         }
         const { url: url } = res
-        return url
+        return { ok: true, data: url }
     }
 
-    getUsers(): Array<User> {
-        const res = this.database.prepare<[], User>(`
-        SELECT * FROM User`).all()
+    getUsers(): ResultStore<User[]> {
+        let res: User[] | undefined
+        try {
+            res = this.database.prepare<[], User>(` SELECT * FROM User`).all()
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
         if (res === undefined) {
-            return []
+            return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }
         }
         if (res.length === 0) {
-            return []
+            return { ok: true, data: [] }
         }
         for (let u of res) {
             u.isAdmin = u.isAdmin == true
             u.deleted = u.deleted == true
             u.guest = u.guest == true
         }
-        return res
+        return { ok: true, data: res }
     }
 
-    getUserByID(id: string): User | undefined {
-        const res = this.database.prepare<[string], User>(`
-        SELECT * FROM User WHERE ID == ?`).get(id)
+    getUserByID(id: string): ResultStore<User> {
+        let res: User | undefined
+        try {
+            res = this.database.prepare<[string], User>(`
+            SELECT * FROM User WHERE ID == ?`).get(id)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
         if (res === undefined) {
-            return undefined
+            return { ok: false, err: { code: StoreErrorCode.notFound, msg: "not found" } }
         }
         res.isAdmin = res.isAdmin == true
         res.deleted = res.deleted == true
         res.guest = res.guest == true
-        return res
+        return { ok: true, data: res }
     }
 
-    getEncryptedPasswordByID(id: string): string | undefined {
-        const res = this.database.prepare<[string], UserEncryptedPW>(`
-        SELECT encryptedPassword FROM User WHERE ID == ?`).get(id)
-        if (res === undefined || res.encryptedPassword === undefined) return undefined
-        return res.encryptedPassword
-    }
-
-    getUserByEmail(email: string): User | undefined {
-        const res = this.database.prepare<[string], User>(`
-        SELECT * FROM User WHERE email == ?`).get(email)
+    getEncryptedPasswordByID(id: string): ResultStore<string> {
+        let res: UserEncryptedPW | undefined
+        try {
+            res = this.database.prepare<[string], UserEncryptedPW>(`
+            SELECT encryptedPassword FROM User WHERE ID == ?`).get(id)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
         if (res === undefined) {
-            return undefined
+            return { ok: false, err: { code: StoreErrorCode.notFound, msg: "not found" } }
+        }
+        return { ok: true, data: res.encryptedPassword }
+    }
+
+    getUserByEmail(email: string): ResultStore<User> {
+        let res: User | undefined
+        try {
+            res = this.database.prepare<[string], User>(`
+            SELECT * FROM User WHERE email == ?`).get(email)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
+        if (res === undefined) {
+            return { ok: false, err: { code: StoreErrorCode.notFound, msg: "not found" } }
         }
         res.isAdmin = res.isAdmin == true
         res.deleted = res.deleted == true
         res.guest = res.guest == true
-        return res
+        return { ok: true, data: res }
     }
 
-    getUserByUsername(username: string): User | undefined {
-        const res = this.database.prepare<[string], User>(`
+    getUserByUsername(username: string): ResultStore<User> {
+        let res: User | undefined
+        try {
+            res = this.database.prepare<[string], User>(`
         SELECT * FROM User WHERE username == ?`).get(username)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
         if (res === undefined) {
-            return undefined
+            return { ok: false, err: { code: StoreErrorCode.notFound, msg: "not found" } }
         }
         res.isAdmin = res.isAdmin == true
         res.deleted = res.deleted == true
         res.guest = res.guest == true
-        return res
+        return { ok: true, data: res }
     }
 
-    createUser(user: User): User | undefined {
+    createUser(user: User): ResultStore<User> {
         const stmt = this.database.prepare<
             [string, number, string, string, number,
                 string, string, string, number]>(`
@@ -181,74 +241,104 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
             createdAt, deletedAt, encryptedPassword, isAdmin)
             VALUES (?,?,?,?,?,?,?,?,?)
             `)
-        const info = stmt.run(user.ID, user.guest ? 1 : 0, user.username, user.email,
-            user.deleted ? 1 : 0, user.createdAt, user.deletedAt, user.encryptedPassword,
-            user.isAdmin ? 1 : 0)
-        if (info === undefined) return undefined
-        if (info.changes < 1) return undefined
-        return user
+        let info: BetterSqlite3.RunResult | undefined
+        try {
+            info = stmt.run(user.ID, user.guest ? 1 : 0, user.username, user.email,
+                user.deleted ? 1 : 0, user.createdAt, user.deletedAt, user.encryptedPassword,
+                user.isAdmin ? 1 : 0)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
+        if (info === undefined || info.changes < 1) return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }
+        return { ok: true, data: user }
     }
 
-    cancelUserByID(id: string): boolean {
+    cancelUserByID(id: string): ResultStore<boolean> {
         const stmt = this.database.prepare<[string, string]>(`
             UPDATE User SET deleted = 1, deletedAt = ? WHERE ID == ?
             `)
         const deletedAt: User["deletedAt"] = (new Date())
             .toISOString().split('T')[0]
-        const info = stmt.run(deletedAt, id)
-        if (info === undefined) return false
-        if (info.changes < 1) return false
-        return true
+        let info: BetterSqlite3.RunResult | undefined
+        try {
+            info = stmt.run(deletedAt, id)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
+        if (info === undefined || info.changes < 1) return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }
+        return { ok: true, data: true }
     }
 
-    deleteUserByID(id: string): boolean {
+    deleteUserByID(id: string): ResultStore<boolean> {
         const stmt = this.database.prepare<[string]>(`
             DELETE FROM User WHERE ID == ?
             `)
-        const info = stmt.run(id)
-        if (info === undefined) return false
-        if (info.changes < 1) return false
-        return true
+        let info: BetterSqlite3.RunResult | undefined
+        try {
+            info = stmt.run(id)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
+        if (info === undefined || info.changes < 1) return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }
+        return { ok: true, data: true }
     }
 
-    trackServe(short: string): boolean {
+    trackServe(short: string): ResultStore<boolean> {
         const stmt = this.database.prepare<string>(`
             UPDATE TrackLink SET activity = activity + 1 WHERE short == ?
             `)
-        let info = stmt.run(short)
-        if (info !== undefined && info.changes > 0) return true
-
+        let info: BetterSqlite3.RunResult | undefined
+        try {
+            info = stmt.run(short)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
+        if (info !== undefined && info.changes > 0) return { ok: true, data: true }
         const stmt2 = this.database.prepare<[string, number]>(`
             INSERT INTO TrackLink (short, activity)
             VALUES (?,?)
             `)
-        info = stmt2.run(short, 1)
-        if (info === undefined || info.changes < 1) return false
-        return true
+        try {
+            info = stmt2.run(short, 1)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
+        if (info === undefined || info.changes < 1) return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }
+        return { ok: true, data: true }
     }
 
-    getLastLinkID(): number {
+    getLastLinkID(): ResultStore<number> {
         type maxId = {
             "max(ID)": number
         }
-        const res = this.database.prepare<[], maxId>(`
-        SELECT max(ID) FROM Link`).get()
+        let res: maxId | undefined
+        try {
+            res = this.database.prepare<[], maxId>(`
+            SELECT max(ID) FROM Link`).get()
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
         if (res === undefined) {
-            return -1
+            return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }
         }
         const { "max(ID)": id } = res
-        return id
+        return { ok: true, data: id }
     }
 
-    getLinkByShort(short: string): Link | undefined {
-        const res = this.database.prepare<[string], Link>(`
-        SELECT * FROM Link WHERE short == ?`).get(short)
+    getLinkByShort(short: string): ResultStore<Link> {
+        let res: Link | undefined
+        try {
+            res = this.database.prepare<[string], Link>(`
+            SELECT * FROM Link WHERE short == ?`).get(short)
+        } catch (e) {
+            return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
+        }
         if (res === undefined) {
-            return undefined
+            return { ok: false, err: { code: StoreErrorCode.notFound, msg: "not found" } }
         }
         res.status = res.status == true
         res.deleted = res.deleted == true
-        return res
+        return { ok: true, data: res }
     }
 
     teardown() {

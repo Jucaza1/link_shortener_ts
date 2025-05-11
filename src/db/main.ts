@@ -1,27 +1,28 @@
-import * as types from "../types"
+import { ResultStore } from "../types/result"
+import { Link, User } from "../types/entities"
 
 export interface UserDB {
-    getUsers(): Array<types.User>
-    getUserByID(id: string): types.User | undefined
-    getEncryptedPasswordByID(id: string): string | undefined
-    getUserByEmail(email: string): types.User | undefined
-    getUserByUsername(username: string): types.User | undefined
-    createUser(user : types.User) : types.User | undefined
-    cancelUserByID(id: string): boolean
-    deleteUserByID(id: string): boolean
-    teardown():void
+    getUsers(): ResultStore<User[]>
+    getUserByID(id: string): ResultStore<User>
+    getEncryptedPasswordByID(id: string): ResultStore<string>
+    getUserByEmail(email: string): ResultStore<User>
+    getUserByUsername(username: string): ResultStore<User>
+    createUser(user: User): ResultStore<User>
+    cancelUserByID(id: string): ResultStore<boolean>
+    deleteUserByID(id: string): ResultStore<boolean>
+    teardown(): void
 }
 
 export interface LinkDB {
-    getLinksByUser(UserID: string): Array<types.Link>
-    getLinkByID(id: number): types.Link | undefined
-    createLink(link: types.Link): types.Link | undefined
-    cancelLinkByID(id: number): boolean
-    deleteLinkByID(id: number): boolean
-    serveLink(short: string): string | undefined
-    trackServe(short: string): boolean
-    getLastLinkID(): number
-    getLinkByShort(short: string):types.Link | undefined
-    teardown():void
+    getLinksByUser(UserID: string): ResultStore<Link[]>
+    getLinkByID(id: number): ResultStore<Link>
+    createLink(link: Link): ResultStore<Link>
+    cancelLinkByID(id: number): ResultStore<boolean>
+    deleteLinkByID(id: number): ResultStore<boolean>
+    serveLink(short: string): ResultStore<string>
+    trackServe(short: string): ResultStore<boolean>
+    getLastLinkID(): ResultStore<number>
+    getLinkByShort(short: string): ResultStore<Link>
+    teardown(): void
     //
 }

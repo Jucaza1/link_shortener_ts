@@ -2,10 +2,10 @@ import z from "zod"
 import crypto from 'crypto';
 import { v4 as uuidv4 } from "uuid"
 
-import { errorSource, Operation } from "./error"
+import { ResultHttp } from "./result";
 
 export const UserSchema = z.object({
-    ID: z.string().uuid(),
+    ID: z.string({ message: "invalid id" }).uuid({ message: "invalid id" }),
     isAdmin: z.boolean(),
     guest: z.boolean(),
     username: z.string()
@@ -20,7 +20,7 @@ export const UserSchema = z.object({
 })
 
 export const LinkSchema = z.object({
-    userID: z.string().uuid(),
+    userID: z.string().uuid().nullable(),
     ID: z.number(),
     url: z.string().url().refine((url) => {
         const domainRegex = /^https?:\/\/[a-zA-Z0-9\-_\.]+\.[a-z]{2,}(\/[a-zA-Z0-9\-_\.]*)*(\?[a-zA-Z0-9\-_=&]*)?$/i;
@@ -120,18 +120,10 @@ export function parseLink_DTO(l: Link): Link_DTO {
     }
 }
 
-type ErrorMsg = {
-    error: string
-}
-
-export function errorMsg(s: string): ErrorMsg {
-    return { error: s }
-}
-
-export function createUserFromParams(params: UserParams, encrypter: PasswordEncrypter, isAdmin: boolean = false): Operation<User | undefined> {
+export function createUserFromParams(params: UserParams, encrypter: PasswordEncrypter, isAdmin: boolean = false): ResultHttp<User> {
     const validationRes = UserParamsSchema.safeParse(params)
     if (!validationRes.success) {
-        return new Operation(false, undefined, errorSource.validation, "invalid user")
+        return { ok: false, err: { status: 400, msg: validationRes.error.errors.map((e) => e.message) } }
     }
     const validParams = validationRes.data
     const user: User = {
@@ -145,13 +137,13 @@ export function createUserFromParams(params: UserParams, encrypter: PasswordEncr
         createdAt: (new Date()).toISOString().split(".")[0],
         encryptedPassword: encrypter.encrytp(validParams.password),
     }
-    return new Operation(true, user)
+    return { ok: true, data: user }
 }
 
-export function createLinkFromParams(params: LinkParams, userID: string, short: string): Operation<Link | undefined> {
+export function createLinkFromParams(params: LinkParams, userID: string, short: string): ResultHttp<Link> {
     const validationRes = LinkParamsSchema.safeParse(params)
     if (!validationRes.success) {
-        return new Operation(false, undefined, errorSource.validation, "invalid url")
+        return { ok: false, err: { status: 400, msg: validationRes.error.errors.map((e) => e.message) } }
     }
     const validParams = validationRes.data
     const link: Link = {
@@ -165,13 +157,13 @@ export function createLinkFromParams(params: LinkParams, userID: string, short: 
         deletedAt: "",
         expiresAt: "",
     }
-    return new Operation(true, link)
+    return { ok: true, data: link }
 }
 
-export function createLinkFromParamsWithExpiration(params: LinkParams, userID: string, short: string, expDate: string): Operation<Link | undefined> {
+export function createLinkFromParamsWithExpiration(params: LinkParams, userID: string | null, short: string, expDate: string): ResultHttp<Link> {
     const validationRes = LinkParamsSchema.safeParse(params)
     if (!validationRes.success) {
-        return new Operation(false, undefined, errorSource.validation, "invalid url")
+        return { ok: false, err: { status: 400, msg: validationRes.error.errors.map((e) => e.message) } }
     }
     const validParams = validationRes.data
     const link: Link = {
@@ -185,7 +177,7 @@ export function createLinkFromParamsWithExpiration(params: LinkParams, userID: s
         deletedAt: "",
         expiresAt: expDate,
     }
-    return new Operation(true, link)
+    return { ok: true, data: link }
 }
 
 export class PasswordEncrypter {

@@ -1,7 +1,7 @@
 import { describe, test, expect } from '@jest/globals'
 import { SqliteDB } from "../src/db/sqlite"
 import * as db from "../src/db/main"
-import * as types from "../src/types"
+import * as types from "../src/types/entities"
 export function createUserDB(): db.UserDB {
     return new SqliteDB("test_db.db")
 }
@@ -169,8 +169,8 @@ describe('Userdb', () => {
         const success = db.cancelUserByID(user.ID)
         expect(success).toEqual(true)
         const getUser = db.getUserByID(user.ID)
-        expect(getUser).toBeDefined()
-        expect(getUser?.deleted).toEqual(true)
+        expect(getUser.ok).toEqual(true)
+        expect(getUser.data?.deleted).toEqual(true)
         console.log = () => { }
         db.teardown()
     })
@@ -291,16 +291,17 @@ describe('Linkdb', () => {
         expect(resUser1).toBeDefined()
         expect(resUser1).toEqual(user)
         let resLinks: Array<types.Link | undefined> = []
-        resLinks[0] = db.createLink(links[0])
-        resLinks[1] = db.createLink(links[1])
+        resLinks[0] = db.createLink(links[0]).data
+        resLinks[1] = db.createLink(links[1]).data
         expect(resLinks[0]).toBeDefined()
         expect(resLinks[1]).toBeDefined();
-        links[0].ID = ((resLinks[0] as types.Link).ID) as number
-        links[1].ID = ((resLinks[1] as types.Link).ID) as number
+        links[0].ID = resLinks[0]!.ID
+        links[1].ID = resLinks[1]!.ID
         expect(resLinks).toEqual(links)
-        const AllLinksGet = db.getLinksByUser(user.ID)
-        expect(AllLinksGet[0]).toBeDefined()
-        expect(AllLinksGet[1]).toBeDefined()
+        const AllLinksGet = db.getLinksByUser(user.ID).data
+        expect(AllLinksGet).toBeDefined()
+        expect(AllLinksGet![0]).toBeDefined()
+        expect(AllLinksGet![1]).toBeDefined()
         expect(AllLinksGet).toEqual(links)
         console.log = () => { }
         db.teardown()
@@ -345,12 +346,12 @@ describe('Linkdb', () => {
         expect(resUser1).toBeDefined()
         expect(resUser1).toEqual(user)
         let resLinks: Array<types.Link | undefined> = []
-        resLinks[0] = db.createLink(links[0])
-        resLinks[1] = db.createLink(links[1])
+        resLinks[0] = db.createLink(links[0]).data
+        resLinks[1] = db.createLink(links[1]).data
         expect(resLinks[0]).toBeDefined()
         expect(resLinks[1]).toBeDefined();
-        links[0].ID = ((resLinks[0] as types.Link).ID) as number
-        links[1].ID = ((resLinks[1] as types.Link).ID) as number
+        links[0].ID = resLinks[0]!.ID
+        links[1].ID = resLinks[1]!.ID
         expect(resLinks).toEqual(links)
         const resLink = db.getLinkByShort(links[0].short)
         expect(resLink).toBeDefined()
@@ -399,12 +400,12 @@ describe('Linkdb', () => {
         expect(resUser1).toBeDefined()
         expect(resUser1).toEqual(user)
         let resLinks: Array<types.Link | undefined> = []
-        resLinks[0] = db.createLink(links[0])
-        resLinks[1] = db.createLink(links[1])
+        resLinks[0] = db.createLink(links[0]).data
+        resLinks[1] = db.createLink(links[1]).data
         expect(resLinks[0]).toBeDefined()
         expect(resLinks[1]).toBeDefined();
-        links[0].ID = ((resLinks[0] as types.Link).ID) as number
-        links[1].ID = ((resLinks[1] as types.Link).ID) as number
+        links[0].ID = resLinks[0]!.ID
+        links[1].ID = resLinks[1]!.ID
         expect(resLinks).toEqual(links)
         const resLink = db.getLinkByID(links[0].ID)
         expect(resLink).toBeDefined()
@@ -481,8 +482,8 @@ describe('Linkdb', () => {
         expect(resUser1).toBeDefined()
         expect(resUser1).toEqual(user1)
         const resLink = db.createLink(link)
-        expect(resLink).toBeDefined()
-        link.ID = (resLink as types.Link).ID
+        expect(resLink.ok).toEqual(true)
+        link.ID = resLink.data!.ID!
         expect(resLink).toEqual(link)
         const id = db.getLastLinkID()
         expect(id).toBeDefined()

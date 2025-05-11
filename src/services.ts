@@ -1,40 +1,45 @@
 import * as db from "./db/main";
-import * as types from "./types"
-import { errorSource, Operation } from "./error";
+import {
+    User, User_DTO, UserSchema, UserParams, parseUser_DTO,
+    Link, Link_DTO, LinkSchema, LinkParamsSchema, LinkParams, parseLink_DTO,
+    createLinkFromParams, createUserFromParams, createLinkFromParamsWithExpiration,
+    PasswordEncrypter
+} from "./types/entities"
 import { Hasher } from "./hash";
+import { ResultHttp, resultStoreToResultHttp } from "./types/result";
 
 export interface UserService {
-    getUsers(): Operation<Array<types.User> | undefined>
-    getUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
-    getEncrytpedPasswordByID(id: string): Operation<string | undefined>
-    getUserByEmail(email: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
-    getUserByUsername(username: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
-    createUser(userParams: types.UserParams): Operation<types.User_DTO | undefined>
-    createAdmin(userParams: types.UserParams): Operation<types.User | undefined>
-    cancelUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
-    deleteUserByID(id: string, forAdmin?: boolean): Operation<types.User_DTO | types.User | undefined>
+    getUsers(): ResultHttp<User[]>
+    getUserByID(id: string, forAdmin?: boolean): ResultHttp<User_DTO | User>
+    getEncrytpedPasswordByID(id: string): ResultHttp<string>
+    getUserByEmail(email: string, forAdmin?: boolean): ResultHttp<User_DTO | User>
+    getUserByUsername(username: string, forAdmin?: boolean): ResultHttp<User_DTO | User>
+    createUser(userParams: UserParams): ResultHttp<User_DTO>
+    createAdmin(userParams: UserParams): ResultHttp<User>
+    cancelUserByID(id: string, forAdmin?: boolean): ResultHttp<User_DTO | User>
+    deleteUserByID(id: string, forAdmin?: boolean): ResultHttp<User_DTO | User>
 }
 
 export interface LinkService {
-    getLinkByID(id: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
-    getLinksByUser(id: string, forAdmin?: boolean): Operation<Array<types.Link_DTO> | Array<types.Link>>
-    createLink(url: types.LinkParams, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
-    createAnonymousLink(link: types.LinkParams): Operation<types.Link_DTO | undefined>
-    deleteLinkByID(id: number, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
-    cancelLinkByID(id: number, userID: string, forAdmin?: boolean): Operation<types.Link_DTO | types.Link | undefined>
+    getLinkByID(id: string, forAdmin?: boolean): ResultHttp<Link_DTO | Link>
+    getLinksByUser(id: string, forAdmin?: boolean): ResultHttp<Link_DTO[] | Link[]>
+    createLink(url: LinkParams, userID: string, forAdmin?: boolean): ResultHttp<Link_DTO | Link>
+    createAnonymousLink(link: LinkParams): ResultHttp<Link_DTO>
+    deleteLinkByID(id: number, userID: string, forAdmin?: boolean): ResultHttp<Link_DTO | Link>
+    cancelLinkByID(id: number, userID: string, forAdmin?: boolean): ResultHttp<Link_DTO | Link>
 }
 
 export interface LinkServerService {
-    serveLink(short: string): Operation<string | undefined>
-    trackLink(short: string): Operation<boolean>
+    serveLink(short: string): ResultHttp<string>
+    trackLink(short: string): ResultHttp<boolean>
 }
 
 export class ServiceImpl implements UserService, LinkService, LinkServerService {
     udb: db.UserDB
     ldb: db.LinkDB
     haser: Hasher
-    encrypter: types.PasswordEncrypter
-    constructor(udb: db.UserDB, ldb: db.LinkDB, hasher: Hasher, encrypter: types.PasswordEncrypter) {
+    encrypter: PasswordEncrypter
+    constructor(udb: db.UserDB, ldb: db.LinkDB, hasher: Hasher, encrypter: PasswordEncrypter) {
         this.udb = udb
         this.ldb = ldb
         this.haser = hasher
@@ -59,385 +64,241 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
 
     }
 
-    getUsers(): Operation<Array<types.User> | undefined> {
-        let result: Array<types.User> | undefined
-        result = this.udb.getUsers()
-        if (!result) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        return new Operation(true, result)
+    getUsers(): ResultHttp<User[]> {
+        let result = this.udb.getUsers()
+        return resultStoreToResultHttp(result)
     }
 
-    getUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
-        let result: types.User | undefined
-        const validationRes = types.UserSchema.shape.ID.safeParse(id)
+    getUserByID(id: string, forAdmin: boolean = false): ResultHttp<User_DTO | User> {
+        const validationRes = UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid id")
+            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
         }
         const validID = validationRes.data
-        try {
-            result = this.udb.getUserByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
+        const result = this.udb.getUserByID(validID)
         if (forAdmin) {
-            return new Operation(true, result)
+            return resultStoreToResultHttp(result)
         }
-        return new Operation(true, types.parseUser_DTO(result))
+        return resultStoreToResultHttp({ ...result, data: (result.ok ? parseUser_DTO(result.data!) : undefined) })
     }
 
-    getEncrytpedPasswordByID(id: string): Operation<string | undefined> {
-        let result: string | undefined
-        const validationRes = types.UserSchema.shape.ID.safeParse(id)
+    getEncrytpedPasswordByID(id: string): ResultHttp<string> {
+        const validationRes = UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid id")
+            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
         }
         const validID = validationRes.data
-        try {
-            result = this.udb.getEncryptedPasswordByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        return new Operation(true, result)
+        const result = this.udb.getEncryptedPasswordByID(validID)
+        return resultStoreToResultHttp(result)
     }
 
-    getUserByEmail(email: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
-        let result: types.User | undefined
-        const validationRes = types.UserSchema.shape.email.safeParse(email)
+    getUserByEmail(email: string, forAdmin: boolean = false): ResultHttp<User_DTO | User> {
+        const validationRes = UserSchema.shape.email.safeParse(email)
         if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid email")
+            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
         }
         const validEmail = validationRes.data
-        try {
-            result = this.udb.getUserByEmail(validEmail)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
+        const result = this.udb.getUserByEmail(validEmail)
         if (forAdmin) {
-            return new Operation(true, result)
+            return resultStoreToResultHttp(result)
         }
-        return new Operation(true, types.parseUser_DTO(result))
+        return resultStoreToResultHttp({ ...result, data: (result.ok ? parseUser_DTO(result.data!) : undefined) })
     }
 
-    getUserByUsername(username: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
-        let result: types.User | undefined
-        const validationRes = types.UserSchema.shape.username.safeParse(username)
+    getUserByUsername(username: string, forAdmin: boolean = false): ResultHttp<User_DTO> {
+        const validationRes = UserSchema.shape.username.safeParse(username)
         if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid username")
+            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
         }
         const validUsername = validationRes.data
-        try {
-            result = this.udb.getUserByUsername(validUsername)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
+        const result = this.udb.getUserByUsername(validUsername)
         if (forAdmin) {
-            return new Operation(true, result)
+            return resultStoreToResultHttp(result)
         }
-        return new Operation(true, types.parseUser_DTO(result))
+        return resultStoreToResultHttp({ ...result, data: (result.ok ? parseUser_DTO(result.data!) : undefined) })
     }
 
-    createUser(userParams: types.UserParams): Operation<types.User_DTO | undefined> {
-        let result: types.User | undefined
-        const validationRes = types.UserParamsSchema.safeParse(userParams)
-        if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid user")
+    createUser(userParams: UserParams): ResultHttp<User_DTO> {
+        const validationUser = createUserFromParams(userParams, this.encrypter)
+        if (!validationUser.ok) {
+            return validationUser
         }
-        const validUserParams: types.UserParams = validationRes.data
-        const operation = types.createUserFromParams(validUserParams, this.encrypter)
-        if (!operation.success || operation.data === undefined) {
-            return operation
-        }
-        try {
-            result = this.udb.createUser(operation.data)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        return new Operation(true, types.parseUser_DTO(result))
+        const result = this.udb.createUser(validationUser.data!)
+        return resultStoreToResultHttp({ ...result, data: (result.ok ? parseUser_DTO(result.data!) : undefined) })
     }
 
-    createAdmin(userParams: types.UserParams): Operation<types.User | undefined> {
-        let result: types.User | undefined
-        const validationRes = types.UserParamsSchema.safeParse(userParams)
-        if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid user")
+    createAdmin(userParams: UserParams): ResultHttp<User> {
+        const validationUser = createUserFromParams(userParams, this.encrypter, true)
+        if (!validationUser.ok) {
+            return validationUser
         }
-        const validUserParams: types.UserParams = validationRes.data
-        const operation = types.createUserFromParams(validUserParams, this.encrypter, true)
-        if (!operation.success || operation.data === undefined) {
-            return operation
-        }
-        try {
-            result = this.udb.createUser(operation.data)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        return new Operation(true, result)
+        const result = this.udb.createUser(validationUser.data!)
+        return resultStoreToResultHttp(result)
     }
 
-    cancelUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | undefined> {
-        let result: types.User | undefined
-        let success: boolean = false
-        const validationRes = types.UserSchema.shape.ID.safeParse(id)
+    cancelUserByID(id: string, forAdmin: boolean = false): ResultHttp<User_DTO> {
+        const validationRes = UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid id")
+            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
         }
         const validID = validationRes.data
-        try {
-            result = this.udb.getUserByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
+        const resultGet = this.udb.getUserByID(validID)
+        if (!resultGet.ok) {
+            return resultStoreToResultHttp(resultGet)
         }
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        try {
-            success = this.udb.cancelUserByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        if (true !== success) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
+        const resultCancel = this.udb.cancelUserByID(validID)
         if (forAdmin) {
-            return new Operation(true, types.parseUser_DTO(result))
+            return resultStoreToResultHttp({ ...resultCancel, data: (resultCancel.ok ? resultGet.data : undefined) })
         }
-        return new Operation(true, types.parseUser_DTO(result))
-
+        return resultStoreToResultHttp({ ...resultCancel, data: (resultCancel.ok ? parseUser_DTO(resultGet.data!) : undefined) })
     }
 
-    deleteUserByID(id: string, forAdmin: boolean = false): Operation<types.User_DTO | types.User | undefined> {
-        let result: types.User | undefined
-        let success: boolean = false
-        const validationRes = types.UserSchema.shape.ID.safeParse(id)
+    deleteUserByID(id: string, forAdmin: boolean = false): ResultHttp<User_DTO | User> {
+        const validationRes = UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid id")
+            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
         }
         const validID = validationRes.data
-        try {
-            result = this.udb.getUserByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
+        const resultGet = this.udb.getUserByID(validID)
+        if (!resultGet.ok) {
+            return resultStoreToResultHttp(resultGet)
         }
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        try {
-            success = this.udb.deleteUserByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        if (true !== success) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
+        const resultDel = this.udb.cancelUserByID(validID)
         if (forAdmin) {
-            return new Operation(true, result)
+            return resultStoreToResultHttp({ ...resultDel, data: (resultDel.ok ? resultGet.data : undefined) })
         }
-        return new Operation(true, types.parseUser_DTO(result))
+        return resultStoreToResultHttp({ ...resultDel, data: (resultDel.ok ? parseUser_DTO(resultGet.data!) : undefined) })
     }
 
-    getLinkByID(id: string, forAdmin: boolean = false): Operation<types.Link_DTO | types.Link | undefined> {
-        let result: types.Link | undefined
-        const validationRes = types.LinkSchema.shape.ID.safeParse(id)
+    getLinkByID(id: string, forAdmin: boolean = false): ResultHttp<Link_DTO | Link> {
+        const validationRes = LinkSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid id")
+            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
         }
         const validID = validationRes.data
-        try {
-            result = this.ldb.getLinkByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
+        const result = this.ldb.getLinkByID(validID)
         if (forAdmin) {
-            return new Operation(true, result)
+            return resultStoreToResultHttp(result)
         }
-        return new Operation(true, types.parseLink_DTO(result))
+        return resultStoreToResultHttp({ ...result, data: (result.ok ? parseLink_DTO(result.data!) : undefined) })
     }
 
-    getLinksByUser(id: string, forAdmin: boolean = false): Operation<Array<types.Link_DTO> | Array<types.Link>> {
-        let result: Array<types.Link> = []
-        const validationRes = types.UserSchema.shape.ID.safeParse(id)
+    getLinksByUser(id: string, forAdmin: boolean = false): ResultHttp<Link_DTO[] | Link[]> {
+        const validationRes = UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid id")
+            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
         }
         const validID = validationRes.data
-        try {
-            result = this.ldb.getLinksByUser(validID)
-        } catch (e) {
-            return new Operation(false, [], errorSource.database, "internal server error")
-        }
-        if (result === undefined) {
-            return new Operation(false, [], errorSource.database, "internal server error")
-        }
+        const result = this.ldb.getLinksByUser(validID)
         if (forAdmin) {
-            return new Operation(true, result)
+            return resultStoreToResultHttp(result)
         }
-        return new Operation(true, result.map(link => types.parseLink_DTO(link)))
+        return resultStoreToResultHttp({ ...result, data: (result.ok ? result.data?.map((l) => parseLink_DTO(l)) : undefined) })
     }
 
-    createLink(link: types.LinkParams, userID: string, forAdmin: boolean = false): Operation<types.Link_DTO | types.Link | undefined> {
-        let userResult: types.User | undefined
-        let result: types.Link | undefined
-        let validationUserRes = types.LinkSchema.shape.userID.safeParse(userID)
+    createLink(link: LinkParams, userID: string, forAdmin: boolean = false): ResultHttp<Link_DTO | Link> {
+        let validationUserRes = UserSchema.shape.ID.safeParse(userID)
         if (!validationUserRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid id")
+            return { ok: false, err: { status: 400, msg: [validationUserRes.error.message] } }
         }
         const validID = validationUserRes.data
-        let validationLinkRes = types.LinkParamsSchema.safeParse(link)
+        let validationLinkRes = LinkParamsSchema.safeParse(link)
         if (!validationLinkRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid url")
+            return { ok: false, err: { status: 400, msg: [validationLinkRes.error.message] } }
         }
-        try {
-            userResult = this.udb.getUserByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
+        const userResult = this.udb.getUserByID(validID)
+        if (!userResult.ok) {
+            return { ok: false, err: { status: 400, msg: ["invalid user"] } }
         }
-        if (userResult === undefined) {
-            return new Operation(false, undefined, errorSource.database, "user not found")
+        const currentId = this.ldb.getLastLinkID()
+        if (!currentId.ok || currentId.data === undefined) {
+            return { ok: false, err: { status: 500, msg: ["internal server error"] } }
         }
-        const next = this.ldb.getLastLinkID() + 1
-        const short = this.haser.hash(next)
-        const operation = types.createLinkFromParams(link, validID, short)
-        if (!operation.success || operation.data === undefined) {
-            return operation
+        const nextId = currentId.data + 1
+        const short = this.haser.hash(nextId)
+        const validationLink = createLinkFromParams(link, validID, short)
+        if (!validationLink.ok || validationLink.data === undefined) {
+            return validationLink
         }
-        result = operation.data
-        try {
-            result = this.ldb.createLink(result)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        result = this.ldb.getLinkByShort(short)
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "link not found")
-        }
+        const result = this.ldb.createLink(validationLink.data)
         if (forAdmin) {
-            return new Operation(true, result)
+            return resultStoreToResultHttp(result)
         }
-        return new Operation(true, types.parseLink_DTO(result))
+        return resultStoreToResultHttp({ ...result, data: (result.ok ? parseLink_DTO(result.data!) : undefined) })
     }
 
-    createAnonymousLink(link: types.LinkParams): Operation<types.Link_DTO | undefined> {
-        let result: types.Link | undefined
-        let validationLinkRes = types.LinkParamsSchema.safeParse(link)
+    createAnonymousLink(link: LinkParams): ResultHttp<Link_DTO> {
+        let validationLinkRes = LinkParamsSchema.safeParse(link)
         if (!validationLinkRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid url")
+            return { ok: false, err: { status: 400, msg: [validationLinkRes.error.message] } }
         }
-        const next = this.ldb.getLastLinkID() + 1
+        const currentId = this.ldb.getLastLinkID()
+        if (!currentId.ok || currentId.data === undefined) {
+            return { ok: false, err: { status: 500, msg: ["internal server error"] } }
+        }
+        const next = currentId.data + 1
         const short = this.haser.hash(next)
         const durationMilis = 1000 * 60 * 60 * 24
         const expDate = (new Date(Date.now() + durationMilis)).toISOString().split(".")[0]
-        const operation = types.createLinkFromParamsWithExpiration(link, "", short, expDate)
-        if (!operation.success || operation.data === undefined) {
-            return operation
+
+        const validationLink = createLinkFromParamsWithExpiration(link, null, short, expDate)
+        if (!validationLink.ok || validationLink.data === undefined) {
+            return validationLink
         }
-        result = operation.data
-        try {
-            result = this.ldb.createLink(result)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        result = this.ldb.getLinkByShort(short)
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "link not found")
-        }
-        return new Operation(true, types.parseLink_DTO(result))
+        const result = this.ldb.createLink(validationLink.data)
+        return resultStoreToResultHttp(result)
     }
 
-    deleteLinkByID(id: number, userID: string, isAdmin: boolean = false): Operation<types.Link | undefined> {
-        let result: types.Link | undefined
-        let success: boolean = false
-        const validationRes = types.LinkSchema.shape.ID.safeParse(id)
+    deleteLinkByID(id: number, userID: string, forAdmin: boolean = false): ResultHttp<Link | Link_DTO> {
+        const validationRes = LinkSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid id")
+            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
         }
         const validID = validationRes.data
-        try {
-            result = this.ldb.getLinkByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
+        const resultGet = this.ldb.getLinkByID(validID)
+        if (!resultGet.ok || resultGet.data === undefined) {
+            return { ok: false, err: { status: 400, msg: ["not found"] } }
         }
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
+        if (!forAdmin && resultGet.data.userID !== userID) {
+            return { ok: false, err: { status: 401, msg: ["unauthorized"] } }
         }
-        if (!isAdmin && result.userID !== userID) {
-            return new Operation(false, undefined, errorSource.database, "unauthorized")
+        const resultDel = this.ldb.deleteLinkByID(validID)
+        if (forAdmin) {
+            return resultStoreToResultHttp({ ...resultDel, data: (resultDel.ok ? resultGet.data : undefined) })
         }
-        try {
-            success = this.ldb.deleteLinkByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        if (true !== success) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        return new Operation(true, result)
+        return resultStoreToResultHttp({ ...resultDel, data: (resultDel.ok ? parseLink_DTO(resultGet.data!) : undefined) })
     }
 
-    cancelLinkByID(id: number, userID: string, isAdmin: boolean = false): Operation<types.Link | undefined> {
-        let result: types.Link | undefined
-        let success: boolean = false
-        const validationRes = types.LinkSchema.shape.ID.safeParse(id)
+    cancelLinkByID(id: number, userID: string, forAdmin: boolean = false): ResultHttp<Link | Link_DTO> {
+        const validationRes = LinkSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return new Operation(false, result, errorSource.validation, "invalid id")
+            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
         }
         const validID = validationRes.data
-        try {
-            result = this.ldb.getLinkByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
+        const resultGet = this.ldb.getLinkByID(validID)
+        if (!resultGet.ok || resultGet.data === undefined) {
+            return { ok: false, err: { status: 400, msg: ["not found"] } }
         }
-        if (result === undefined) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
+        if (!forAdmin && resultGet.data.userID !== userID) {
+            return { ok: false, err: { status: 401, msg: ["unauthorized"] } }
         }
-        if (!isAdmin && result.userID !== userID) {
-            return new Operation(false, undefined, errorSource.database, "unauthorized")
+        const resultDel = this.ldb.deleteLinkByID(validID)
+        if (forAdmin) {
+            return resultStoreToResultHttp({ ...resultDel, data: (resultDel.ok ? resultGet.data : undefined) })
         }
-        try {
-            success = this.ldb.cancelLinkByID(validID)
-        } catch (e) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        if (true !== success) {
-            return new Operation(false, undefined, errorSource.database, "internal server error")
-        }
-        return new Operation(true, result)
+        return resultStoreToResultHttp({ ...resultDel, data: (resultDel.ok ? parseLink_DTO(resultGet.data!) : undefined) })
     }
 
-    serveLink(short: string): Operation<string | undefined> {
+    serveLink(short: string): ResultHttp<string> {
         const url = this.ldb.serveLink(short)
-        if (url === undefined || url === "") {
-            return new Operation(false, undefined, errorSource.database, "link not found")
+        if (!url.ok || url.data === undefined) {
+            return { ok: false, err: { status: 404, msg: ["not found"] } }
         }
-        return new Operation(true, url)
+        return resultStoreToResultHttp(url)
     }
 
-    trackLink(short: string): Operation<boolean> {
-        const success = this.ldb.trackServe(short)
-        if (!success) {
-            return new Operation(false, false, errorSource.database, "internal server error")
-        }
-        return new Operation(true, success)
+    trackLink(short: string): ResultHttp<boolean> {
+        const result = this.ldb.trackServe(short)
+        return resultStoreToResultHttp(result)
     }
 }

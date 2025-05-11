@@ -1,11 +1,11 @@
-import { describe, test, expect } from "@jest/globals"
+import { describe, it, expect } from "@jest/globals"
 import supertest from "supertest"
 import express, { json } from "express"
-import { UserParams } from "../src/types"
+import { UserParams } from "../src/types/entities"
 import { AuthHandler } from "../src/handlers/middlewares"
 import { JWT_Auther } from "../src/auth"
-import { ControllerImp } from "../src/controllers"
-import { PasswordEncrypter } from "../src/types"
+import { ServiceImpl } from "../src/services"
+import { PasswordEncrypter } from "../src/types/entities"
 import { createUserDB, createLinkDB } from "./db.test"
 import * as db from "../src/db/main"
 import { Hasher } from "../src/hash"
@@ -14,21 +14,21 @@ export function createAuthHandler(udb: db.UserDB, ldb: db.LinkDB): AuthHandler {
     const encrypter = new PasswordEncrypter('pwdsecret')
     return new AuthHandler(
         new JWT_Auther("jwtsecret"),
-        new ControllerImp(udb, ldb, new Hasher(), encrypter),
+        new ServiceImpl(udb, ldb, new Hasher(), encrypter),
         encrypter
     )
 }
 export function insertUserParms(user: UserParams, udb: db.UserDB, ldb: db.LinkDB): boolean {
-    const controller = new ControllerImp(
+    const controller = new ServiceImpl(
         udb,
         ldb,
         new Hasher(),
         new PasswordEncrypter('pwdsecret')
     )
-    return controller.createUser(user).success
+    return controller.createUser(user).ok
 }
 describe('handlers', () => {
-    test('login', async () => {
+    it('login', async () => {
         const udb = createUserDB()
         const ldb = createLinkDB()
         const AuthHandler = createAuthHandler(udb, ldb)
