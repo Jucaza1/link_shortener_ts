@@ -9,8 +9,14 @@ export function createLinkDB(): db.LinkDB {
     return new SqliteDB("test_db.db")
 }
 describe('Userdb', () => {
-    const db = createUserDB()
-    db.teardown()
+    beforeEach(() => {
+        const udb = createUserDB()
+        udb.teardown()
+    })
+    afterEach(() => {
+        const udb = createUserDB()
+        udb.teardown()
+    })
     test('createUser', () => {
         const db = createUserDB()
         const user: types.User = {
@@ -25,10 +31,10 @@ describe('Userdb', () => {
             deletedAt: ""
         }
         const resUser = db.createUser(user)
-        expect(resUser).toBeDefined()
-        expect(resUser).toEqual(user)
-        console.log = () => { }
-        db.teardown()
+        expect(resUser.ok).toEqual(true)
+        expect(resUser.data).toBeDefined()
+        expect(resUser.data).toEqual(user)
+        // console.log = () => { }
         //TODO test fail cases -> same: id, username, email
     })
     test('getUserByID', () => {
@@ -45,12 +51,12 @@ describe('Userdb', () => {
             deletedAt: ""
         }
         const resUser = db.createUser(user)
-        expect(resUser).toBeDefined()
-        expect(resUser).toEqual(user)
+        expect(resUser.ok).toEqual(true)
+        expect(resUser.data).toEqual(user)
         const userGet = db.getUserByID(user.ID)
-        expect(userGet).toEqual(user)
+        expect(userGet.ok).toEqual(true)
+        expect(userGet.data).toEqual(user)
         console.log = () => { }
-        db.teardown()
     })
     test('getUserByUsername', () => {
         const db = createUserDB()
@@ -66,12 +72,13 @@ describe('Userdb', () => {
             deletedAt: ""
         }
         const resUser = db.createUser(user)
-        expect(resUser).toBeDefined()
-        expect(resUser).toEqual(user)
+        expect(resUser.ok).toBeDefined()
+        expect(resUser.data).toBeDefined()
+        expect(resUser.data).toEqual(user)
         const userGet = db.getUserByUsername(user.username)
-        expect(userGet).toEqual(user)
+        expect(userGet.ok).toEqual(true)
+        expect(userGet.data).toEqual(user)
         console.log = () => { }
-        db.teardown()
     })
     test('getUserByEmail', () => {
         const db = createUserDB()
@@ -87,12 +94,13 @@ describe('Userdb', () => {
             deletedAt: ""
         }
         const resUser = db.createUser(user)
-        expect(resUser).toBeDefined()
-        expect(resUser).toEqual(user)
+        expect(resUser.ok).toEqual(true)
+        expect(resUser.data).toBeDefined()
+        expect(resUser.data).toEqual(user)
         const userGet = db.getUserByEmail(user.email)
-        expect(userGet).toEqual(user)
+        expect(userGet.ok).toEqual(true)
+        expect(userGet.data).toEqual(user)
         console.log = () => { }
-        db.teardown()
     })
     test('getEncryptedPasswordByID', () => {
         const db = createUserDB()
@@ -108,12 +116,12 @@ describe('Userdb', () => {
             deletedAt: ""
         }
         const resUser = db.createUser(user)
-        expect(resUser).toBeDefined()
-        expect(resUser).toEqual(user)
+        expect(resUser.ok).toEqual(true)
+        expect(resUser.data).toBeDefined()
+        expect(resUser.data).toEqual(user)
         const encryptedPassword = db.getEncryptedPasswordByID(user.ID)
-        expect(encryptedPassword).toEqual(user.encryptedPassword)
+        expect(encryptedPassword.data).toEqual(user.encryptedPassword)
         console.log = () => { }
-        db.teardown()
     })
     test('getUsers', () => {
         const db = createUserDB()
@@ -140,15 +148,18 @@ describe('Userdb', () => {
             deletedAt: ""
         }
         const resUser1 = db.createUser(user1)
-        expect(resUser1).toBeDefined()
-        expect(resUser1).toEqual(user1)
+        expect(resUser1.ok).toEqual(true)
+        expect(resUser1.data).toBeDefined()
+        expect(resUser1.data).toEqual(user1)
         const resUser2 = db.createUser(user2)
-        expect(resUser2).toBeDefined()
-        expect(resUser2).toEqual(user2)
+        expect(resUser2.ok).toEqual(true)
+        expect(resUser2.data).toBeDefined()
+        expect(resUser2.data).toEqual(user2)
         const AlluserGet = db.getUsers()
-        expect(AlluserGet).toEqual([user1, user2])
+        expect(AlluserGet.ok).toEqual(true)
+        expect(AlluserGet.data).toBeDefined()
+        expect(AlluserGet.data).toEqual([user1, user2])
         console.log = () => { }
-        db.teardown()
     })
     test('cancelUserByID', () => {
         const db = createUserDB()
@@ -164,15 +175,16 @@ describe('Userdb', () => {
             deletedAt: ""
         }
         const resUser = db.createUser(user)
-        expect(resUser).toBeDefined()
-        expect(resUser).toEqual(user)
+        expect(resUser.ok).toEqual(true)
+        expect(resUser.data).toBeDefined()
+        expect(resUser.data).toEqual(user)
         const success = db.cancelUserByID(user.ID)
-        expect(success).toEqual(true)
+        expect(success.ok).toEqual(true)
+        expect(success.data).toEqual(true)
         const getUser = db.getUserByID(user.ID)
         expect(getUser.ok).toEqual(true)
         expect(getUser.data?.deleted).toEqual(true)
         console.log = () => { }
-        db.teardown()
     })
     test('deleteUserByID', () => {
         const db = createUserDB()
@@ -199,24 +211,40 @@ describe('Userdb', () => {
             deletedAt: ""
         }
         const resUser1 = db.createUser(user1)
-        expect(resUser1).toBeDefined()
-        expect(resUser1).toEqual(user1)
+        expect(resUser1.ok).toEqual(true)
+        expect(resUser1.data).toBeDefined()
+        expect(resUser1.data).toEqual(user1)
         const resUser2 = db.createUser(user2)
-        expect(resUser2).toBeDefined()
-        expect(resUser2).toEqual(user2)
+        expect(resUser2.ok).toEqual(true)
+        expect(resUser2.data).toBeDefined()
+        expect(resUser2.data).toEqual(user2)
         let AlluserGet = db.getUsers()
-        expect(AlluserGet).toEqual([user1, user2])
+        expect(AlluserGet.ok).toEqual(true)
+        expect(AlluserGet.data).toBeDefined()
+        expect(AlluserGet.data).toEqual([user1, user2])
         const success = db.deleteUserByID(user1.ID)
-        expect(success).toEqual(true)
+        expect(success.ok).toEqual(true)
+        expect(success.data).toEqual(true)
         AlluserGet = db.getUsers()
-        expect(AlluserGet).toEqual([user2])
+        expect(AlluserGet.ok).toEqual(true)
+        expect(AlluserGet.data).toBeDefined()
+        expect(AlluserGet.data).toEqual([user2])
         console.log = () => { }
-        db.teardown()
     })
 })
 describe('Linkdb', () => {
-    const db = createLinkDB()
-    db.teardown()
+    beforeEach(() => {
+        const ldb = createLinkDB()
+        const udb = createUserDB()
+        ldb.teardown()
+        udb.teardown()
+    })
+    afterEach(() => {
+        const ldb = createLinkDB()
+        const udb = createUserDB()
+        ldb.teardown()
+        udb.teardown()
+    })
     test('createLink', () => {
         const db = createLinkDB()
         const link: types.Link = {
@@ -243,14 +271,14 @@ describe('Linkdb', () => {
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user1)
-        expect(resUser1).toBeDefined()
-        expect(resUser1).toEqual(user1)
+        expect(resUser1.ok).toBe(true)
+        expect(resUser1.data).toBeDefined()
+        expect(resUser1.data).toEqual(user1)
         const resLink = db.createLink(link)
-        expect(resLink).toBeDefined()
-        expect(resLink).toEqual(link)
+        expect(resLink.ok).toEqual(true)
+        expect(resLink.data).toBeDefined()
+        expect(resLink.data).toEqual(link)
         console.log = () => { }
-        db.teardown()
-        udb.teardown()
     })
     test('getLinksByUser', () => {
         const db = createLinkDB()
@@ -288,8 +316,9 @@ describe('Linkdb', () => {
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user)
-        expect(resUser1).toBeDefined()
-        expect(resUser1).toEqual(user)
+        expect(resUser1.ok).toEqual(true)
+        expect(resUser1.data).toBeDefined()
+        expect(resUser1.data).toEqual(user)
         let resLinks: Array<types.Link | undefined> = []
         resLinks[0] = db.createLink(links[0]).data
         resLinks[1] = db.createLink(links[1]).data
@@ -304,8 +333,6 @@ describe('Linkdb', () => {
         expect(AllLinksGet![1]).toBeDefined()
         expect(AllLinksGet).toEqual(links)
         console.log = () => { }
-        db.teardown()
-        udb.teardown()
     })
     test('getLinkByShort', () => {
         const db = createLinkDB()
@@ -343,8 +370,9 @@ describe('Linkdb', () => {
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user)
-        expect(resUser1).toBeDefined()
-        expect(resUser1).toEqual(user)
+        expect(resUser1.ok).toEqual(true)
+        expect(resUser1.data).toBeDefined()
+        expect(resUser1.data).toEqual(user)
         let resLinks: Array<types.Link | undefined> = []
         resLinks[0] = db.createLink(links[0]).data
         resLinks[1] = db.createLink(links[1]).data
@@ -354,12 +382,10 @@ describe('Linkdb', () => {
         links[1].ID = resLinks[1]!.ID
         expect(resLinks).toEqual(links)
         const resLink = db.getLinkByShort(links[0].short)
-        expect(resLink).toBeDefined()
-        console.log(new Object(resLink).toString)
-        expect(resLink).toEqual(links[0])
+        expect(resLink.ok).toEqual(true)
+        expect(resLink.data).toBeDefined()
+        expect(resLink.data).toEqual(links[0])
         console.log = () => { }
-        db.teardown()
-        udb.teardown()
     })
     test('getlinkByID', () => {
         const db = createLinkDB()
@@ -397,8 +423,9 @@ describe('Linkdb', () => {
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user)
-        expect(resUser1).toBeDefined()
-        expect(resUser1).toEqual(user)
+        expect(resUser1.ok).toEqual(true)
+        expect(resUser1.data).toBeDefined()
+        expect(resUser1.data).toEqual(user)
         let resLinks: Array<types.Link | undefined> = []
         resLinks[0] = db.createLink(links[0]).data
         resLinks[1] = db.createLink(links[1]).data
@@ -408,12 +435,10 @@ describe('Linkdb', () => {
         links[1].ID = resLinks[1]!.ID
         expect(resLinks).toEqual(links)
         const resLink = db.getLinkByID(links[0].ID)
-        expect(resLink).toBeDefined()
-        console.log(new Object(resLink).toString)
-        expect(resLink).toEqual(links[0])
+        expect(resLink.ok).toEqual(true)
+        expect(resLink.data).toBeDefined()
+        expect(resLink.data).toEqual(links[0])
         console.log = () => { }
-        db.teardown()
-        udb.teardown()
     })
     test('serveLink', () => {
         const db = createLinkDB()
@@ -441,17 +466,17 @@ describe('Linkdb', () => {
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user1)
-        expect(resUser1).toBeDefined()
-        expect(resUser1).toEqual(user1)
+        expect(resUser1.ok).toEqual(true)
+        expect(resUser1.data).toBeDefined()
+        expect(resUser1.data).toEqual(user1)
         const resLink = db.createLink(link)
-        expect(resLink).toBeDefined()
-        expect(resLink).toEqual(link)
+        expect(resLink.data).toBeDefined()
+        expect(resLink.data).toEqual(link)
         const url = db.serveLink(link.short)
-        expect(url).toBeDefined()
-        expect(url).toEqual(link.url)
+        expect(url.ok).toEqual(true)
+        expect(url.data).toBeDefined()
+        expect(url.data).toEqual(link.url)
         console.log = () => { }
-        db.teardown()
-        udb.teardown()
     })
     test('getLastLinkID', () => {
         const db = createLinkDB()
@@ -479,18 +504,18 @@ describe('Linkdb', () => {
             deletedAt: ""
         }
         const resUser1 = udb.createUser(user1)
-        expect(resUser1).toBeDefined()
-        expect(resUser1).toEqual(user1)
+        expect(resUser1.ok).toEqual(true)
+        expect(resUser1.data).toBeDefined()
+        expect(resUser1.data).toEqual(user1)
         const resLink = db.createLink(link)
         expect(resLink.ok).toEqual(true)
         link.ID = resLink.data!.ID!
-        expect(resLink).toEqual(link)
+        expect(resLink.data).toEqual(link)
         const id = db.getLastLinkID()
-        expect(id).toBeDefined()
-        expect(id).toEqual(link.ID)
+        expect(id.ok).toEqual(true)
+        expect(id.data).toBeDefined()
+        expect(id.data).toEqual(link.ID)
         console.log = () => { }
-        db.teardown()
-        udb.teardown()
     })
     //TODO test fail cases -> same: id, username, email
 })
