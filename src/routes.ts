@@ -40,7 +40,6 @@ export function createRouter(
     v1Router.post("/guestlink", limiter, jsonMiddleware, lHandler.handleCreateAnonymousLink)
 
     const validateRouter = Router()
-    v1Router.use("/", authHandler.validateMiddleware, validateRouter)
 
     validateRouter.get("/users/:id", uHandler.handleGetUserByID)
     validateRouter.get("/users/email/:email", uHandler.handleGetUserByEmail)
@@ -58,6 +57,7 @@ export function createRouter(
     validateRouter.delete("/users/:id/delete", adminMiddleware, uHandler.handleDeleteUserByID)
     validateRouter.delete("/links/:id/delete", adminMiddleware, lHandler.handleDeleteLinkByID)
 
+    v1Router.use("/", authHandler.validateMiddleware, validateRouter)
     return v1Router
 }
 

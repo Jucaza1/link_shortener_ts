@@ -123,7 +123,7 @@ export function parseLink_DTO(l: Link): Link_DTO {
 export function createUserFromParams(params: UserParams, encrypter: PasswordEncrypter, isAdmin: boolean = false): ResultHttp<User> {
     const validationRes = UserParamsSchema.safeParse(params)
     if (!validationRes.success) {
-        return { ok: false, err: { status: 400, msg: validationRes.error.errors.map((e) => e.message) } }
+        return { ok: false, err: { status: 400, msg: validationRes.error.errors.map((e) => [e.path, e.message].join(":")) } }
     }
     const validParams = validationRes.data
     const user: User = {
@@ -143,7 +143,7 @@ export function createUserFromParams(params: UserParams, encrypter: PasswordEncr
 export function createLinkFromParams(params: LinkParams, userID: string, short: string): ResultHttp<Link> {
     const validationRes = LinkParamsSchema.safeParse(params)
     if (!validationRes.success) {
-        return { ok: false, err: { status: 400, msg: validationRes.error.errors.map((e) => e.message) } }
+        return { ok: false, err: { status: 400, msg: validationRes.error.errors.map((e) => [e.path, e.message].join(":")) } }
     }
     const validParams = validationRes.data
     const link: Link = {
@@ -163,7 +163,7 @@ export function createLinkFromParams(params: LinkParams, userID: string, short: 
 export function createLinkFromParamsWithExpiration(params: LinkParams, userID: string | null, short: string, expDate: string): ResultHttp<Link> {
     const validationRes = LinkParamsSchema.safeParse(params)
     if (!validationRes.success) {
-        return { ok: false, err: { status: 400, msg: validationRes.error.errors.map((e) => e.message) } }
+        return { ok: false, err: { status: 400, msg: validationRes.error.errors.map((e) => [e.path, e.message].join(":")) } }
     }
     const validParams = validationRes.data
     const link: Link = {

@@ -72,7 +72,7 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     getUserByID(id: string, forAdmin: boolean = false): ResultHttp<User_DTO | User> {
         const validationRes = UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: [["id", validationRes.error.message].join(":")] } }
         }
         const validID = validationRes.data
         const result = this.udb.getUserByID(validID)
@@ -85,7 +85,7 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     getEncrytpedPasswordByID(id: string): ResultHttp<string> {
         const validationRes = UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: [["id", validationRes.error.message].join(":")] } }
         }
         const validID = validationRes.data
         const result = this.udb.getEncryptedPasswordByID(validID)
@@ -95,7 +95,7 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     getUserByEmail(email: string, forAdmin: boolean = false): ResultHttp<User_DTO | User> {
         const validationRes = UserSchema.shape.email.safeParse(email)
         if (!validationRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: [["email", validationRes.error.message].join(":")] } }
         }
         const validEmail = validationRes.data
         const result = this.udb.getUserByEmail(validEmail)
@@ -108,7 +108,7 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     getUserByUsername(username: string, forAdmin: boolean = false): ResultHttp<User_DTO> {
         const validationRes = UserSchema.shape.username.safeParse(username)
         if (!validationRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: [["username", validationRes.error.message].join(":")] } }
         }
         const validUsername = validationRes.data
         const result = this.udb.getUserByUsername(validUsername)
@@ -139,7 +139,7 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     cancelUserByID(id: string, forAdmin: boolean = false): ResultHttp<User_DTO> {
         const validationRes = UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: [["id", validationRes.error.message].join(":")] } }
         }
         const validID = validationRes.data
         const resultGet = this.udb.getUserByID(validID)
@@ -156,7 +156,7 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     deleteUserByID(id: string, forAdmin: boolean = false): ResultHttp<User_DTO | User> {
         const validationRes = UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: [["id", validationRes.error.message].join(":")] } }
         }
         const validID = validationRes.data
         const resultGet = this.udb.getUserByID(validID)
@@ -173,7 +173,7 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     getLinkByID(id: string, forAdmin: boolean = false): ResultHttp<Link_DTO | Link> {
         const validationRes = LinkSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: [["id", validationRes.error.message].join(":")] } }
         }
         const validID = validationRes.data
         const result = this.ldb.getLinkByID(validID)
@@ -186,7 +186,7 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     getLinksByUser(id: string, forAdmin: boolean = false): ResultHttp<Link_DTO[] | Link[]> {
         const validationRes = UserSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: [["id", validationRes.error.message].join(":")] } }
         }
         const validID = validationRes.data
         const result = this.ldb.getLinksByUser(validID)
@@ -199,12 +199,12 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     createLink(link: LinkParams, userID: string, forAdmin: boolean = false): ResultHttp<Link_DTO | Link> {
         let validationUserRes = UserSchema.shape.ID.safeParse(userID)
         if (!validationUserRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationUserRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: [["userid", validationUserRes.error.message].join(":")] } }
         }
         const validID = validationUserRes.data
         let validationLinkRes = LinkParamsSchema.safeParse(link)
         if (!validationLinkRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationLinkRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: validationLinkRes.error.issues.map((e) => [e.path, e.message].join(":")) } }
         }
         const userResult = this.udb.getUserByID(validID)
         if (!userResult.ok) {
@@ -230,7 +230,7 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     createAnonymousLink(link: LinkParams): ResultHttp<Link_DTO> {
         let validationLinkRes = LinkParamsSchema.safeParse(link)
         if (!validationLinkRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationLinkRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: validationLinkRes.error.issues.map((e) => [e.path, e.message].join(":")) } }
         }
         const currentId = this.ldb.getLastLinkID()
         if (!currentId.ok || currentId.data === undefined) {
@@ -252,7 +252,7 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     deleteLinkByID(id: number, userID: string, forAdmin: boolean = false): ResultHttp<Link | Link_DTO> {
         const validationRes = LinkSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: [["id", validationRes.error.message].join(":")] } }
         }
         const validID = validationRes.data
         const resultGet = this.ldb.getLinkByID(validID)
@@ -272,7 +272,7 @@ export class ServiceImpl implements UserService, LinkService, LinkServerService 
     cancelLinkByID(id: number, userID: string, forAdmin: boolean = false): ResultHttp<Link | Link_DTO> {
         const validationRes = LinkSchema.shape.ID.safeParse(id)
         if (!validationRes.success) {
-            return { ok: false, err: { status: 400, msg: [validationRes.error.message] } }
+            return { ok: false, err: { status: 400, msg: [["id:", validationRes.error.message].join(":")] } }
         }
         const validID = validationRes.data
         const resultGet = this.ldb.getLinkByID(validID)

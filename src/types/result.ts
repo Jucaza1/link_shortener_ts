@@ -19,6 +19,10 @@ export type StoreError = {
 
 export enum StoreErrorCode {
     engineFault, // 500
+    permissionFault, // 500
+    lockFault, // 500
+    full, // 500
+    constraintFault, // 422
     connectionFault, // 500
     invalidCredentials, // 500
     inconsistentState, // 500
@@ -65,6 +69,18 @@ export function resultStoreToResultHttp<T>(result: ResultStore<T>): ResultHttp<T
             break
         case StoreErrorCode.migrateError:
             e = { ok: false, err: { status: 500, msg: [result.err!.msg!] } }
+            break
+        case StoreErrorCode.full:
+            e = { ok: false, err: { status: 500, msg: [result.err!.msg!] } }
+            break
+        case StoreErrorCode.lockFault:
+            e = { ok: false, err: { status: 500, msg: [result.err!.msg!] } }
+            break
+        case StoreErrorCode.permissionFault:
+            e = { ok: false, err: { status: 500, msg: [result.err!.msg!] } }
+            break
+        case StoreErrorCode.constraintFault:
+            e = { ok: false, err: { status: 422, msg: ["entity already exists"] } }
             break
         default:
             e = { ok: false, err: { status: 500, msg: [result.err!.msg!] } }

@@ -34,13 +34,15 @@ if (DB_SEED) {
         password: PASSWORD_ADMIN,
     }
     const resultParams = createUserFromParams(userParams, new PasswordEncrypter(PASSWORD_SECRET), true)
-    // if (!resultParams.ok || resultParams.data === undefined) {
-    //     console.log("Error creating admin user")
+    if (!resultParams.ok || resultParams.data === undefined) {
+        console.log("Error creating admin user")
+        console.log(resultParams.err)
     //     process.exit(1)
-    // }
+    }
     const result = sqliteDB.createUser(resultParams.data!)
     if (!result.ok) {
         console.log("Error creating admin user")
+        console.log(result.err)
         // process.exit(1)
     }
     console.log("Admin user created")
