@@ -13,7 +13,7 @@ services:
       - PASSWORD_SECRET=passwordsecret
       - DB_LOCATION=/app/data/database.db
       - DB_SEED=true
-      - DB_RESET
+      - DB_RESET=true
       - USERNAME_ADMIN=admin
       - USER_ADMIN_EMAIL=admin@admin.com
       - USER_ADMIN_PASSWORD=adminadmin
