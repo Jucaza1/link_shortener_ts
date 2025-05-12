@@ -27,6 +27,8 @@ export class JWT_Auther implements Auther {
         }
         try {
             decoded = jwt.verify(token, this.secret);
+            console.log("decoded is")
+            console.log(decoded)
         } catch (err) {
             return undefined
         }
