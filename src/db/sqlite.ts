@@ -49,7 +49,6 @@ export class SqliteDB implements db.LinkDB, db.UserDB {
         SELECT * FROM Link WHERE userID == ?`).all(UserID)
         } catch (e) {
             return { ok: false, err: { code: sqlCatchToStoreError(e), msg: "internal server error" } }
-
         }
         if (res === undefined) {
             return { ok: false, err: { code: StoreErrorCode.unknown, msg: "internal server error" } }

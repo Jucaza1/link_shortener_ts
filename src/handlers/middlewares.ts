@@ -37,7 +37,7 @@ export class AuthHandler {
                 return
             }
             // if email is defined, we use it to get the user
-            result = this.uService.getUserByEmail(user.email) as ResultHttp<User>
+            result = this.uService.getUserByEmail(user.email, true) as ResultHttp<User>
         }
         if (!result.ok || result.data === undefined) {
             next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["incorrect credentials"] } })

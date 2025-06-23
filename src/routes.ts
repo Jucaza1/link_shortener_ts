@@ -25,8 +25,8 @@ export function createRouter(
     const uHandler = new UserHandler(uController)
     const lHandler = new LinkHandler(lController)
     const limiter = rateLimit({
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 5, // Limit each IP to X requests per `window` (here, per 15 minutes)
+        windowMs: 5 * 60 * 1000, // 5 minutes
+        max: 5, // Limit each IP to X requests per `window` (here, per 5 minutes)
         message: 'Too many requests from this IP, please try again after 15 minutes',
         standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
         legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -37,17 +37,17 @@ export function createRouter(
     v1Router.post("/users", jsonMiddleware, uHandler.handleCreateUser)
     v1Router.post("/login", jsonMiddleware, authHandler.authenticate)
     //endpoint for anonymous link creation with rate limiter
-    v1Router.post("/guestlink", limiter, jsonMiddleware, lHandler.handleCreateAnonymousLink)
+    v1Router.post("/guestlinks", limiter, jsonMiddleware, lHandler.handleCreateAnonymousLink)
 
     const validateRouter = Router()
 
-    validateRouter.get("/users/:id", uHandler.handleGetUserByID)
+    validateRouter.get("/users/:id/links", lHandler.handleGetLinksByUser)
     validateRouter.get("/users/email/:email", uHandler.handleGetUserByEmail)
     validateRouter.get("/users/username/:username", uHandler.handleGetUserByUsername)
+    validateRouter.get("/users/:id", uHandler.handleGetUserByID)
     validateRouter.get("/me", uHandler.handleGetMyUser)
     validateRouter.delete("/users/:id", uHandler.handleCancelUserByID)
-    validateRouter.get("/users/:id/link", lHandler.handleGetLinksByUser)
-    validateRouter.post("/links/", jsonMiddleware, lHandler.handleCreateLink)
+    validateRouter.post("/links", jsonMiddleware, lHandler.handleCreateLink)
     validateRouter.get("/links/:id", lHandler.handleGetLinkById)
     validateRouter.delete("/links/:id", lHandler.handleCancelLinkByID)
 

@@ -1,4 +1,6 @@
 # Typescript link shortener with express and sqlite
+## PREVIEW without backend! -> [https://linkshare0.pages.dev/](https://linkshare0.pages.dev/)
+## Set up
 ```sh
 git clone https://github.com/Jucaza1/link_shortener_ts
 cd link_shortener_ts
@@ -59,7 +61,7 @@ Returns a JWT token in header `x-authorization`, which must be used to authentic
 
 ### Create a Guest Link (Unauthenticated)
 
-**POST** `/api/v1/guestlink`
+**POST** `/api/v1/guestlinks`
 Rate-limited to 5 requests every 15 minutes per IP.
 **Headers:** `Content-Type: application/json`
 **Body:**

@@ -172,9 +172,9 @@ export class UserHandler {
 }
 
 export class LinkHandler {
-    linkController: LinkService
+    linkService: LinkService
     constructor(linkController: LinkService) {
-        this.linkController = linkController
+        this.linkService = linkController
         this.handleCreateLink = this.handleCreateLink.bind(this)
         this.handleCreateAnonymousLink = this.handleCreateAnonymousLink.bind(this)
         this.handleDeleteLinkByID = this.handleDeleteLinkByID.bind(this)
@@ -204,7 +204,7 @@ export class LinkHandler {
         const hasHttpPrefix = /^https?:\/\//i.test(link.url);
         link.url = hasHttpPrefix ? link.url : `http://${link.url}`;
 
-        const result = this.linkController.createLink(link, user?.ID, user?.isAdmin)
+        const result = this.linkService.createLink(link, user?.ID, user?.isAdmin)
         if (result.ok || result.data === undefined) {
             next({ httpError: result.err!, exception: result.exception })
             return
@@ -224,7 +224,7 @@ export class LinkHandler {
         const hasHttpPrefix = /^https?:\/\//i.test(link.url);
         link.url = hasHttpPrefix ? link.url : `http://${link.url}`;
 
-        const result = this.linkController.createAnonymousLink(link)
+        const result = this.linkService.createAnonymousLink(link)
         if (!result.ok || result.data === undefined) {
             next({ httpError: result.err!, exception: result.exception })
             return
@@ -244,7 +244,7 @@ export class LinkHandler {
             next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid id"] } })
             return
         }
-        const result = this.linkController.deleteLinkByID(parsedID, user.ID, user.isAdmin)
+        const result = this.linkService.deleteLinkByID(parsedID, user.ID, user.isAdmin)
         if (!result.ok || !result.data) {
             next({ httpError: result.err!, exception: result.exception })
             return
@@ -264,7 +264,7 @@ export class LinkHandler {
             next({ httpError: { status: httpStatus.HTTP_STATUS_BAD_REQUEST, msg: ["invalid id"] } })
             return
         }
-        const result = this.linkController.cancelLinkByID(parsedID, user.ID, user.isAdmin)
+        const result = this.linkService.cancelLinkByID(parsedID, user.ID, user.isAdmin)
         if (!result.ok || !result.data) {
             next({ httpError: result.err!, exception: result.exception })
             return
@@ -279,7 +279,7 @@ export class LinkHandler {
             next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["unauthorized"] } })
             return
         }
-        const result = this.linkController.getLinkByID(id, user.isAdmin)
+        const result = this.linkService.getLinkByID(id, user.isAdmin)
         if (!result.ok || !result.data) {
             next({ httpError: result.err!, exception: result.exception })
             return
@@ -299,8 +299,8 @@ export class LinkHandler {
             next({ httpError: { status: httpStatus.HTTP_STATUS_UNAUTHORIZED, msg: ["unauthorized"] } })
             return
         }
-        const result = this.linkController.getLinksByUser(id, user.isAdmin)
-        if (!result.ok || !result.data) {
+        const result = this.linkService.getLinksByUser(id, user.isAdmin)
+        if (!result.ok || result.data === undefined) {
             next({ httpError: result.err!, exception: result.exception })
             return
         }
