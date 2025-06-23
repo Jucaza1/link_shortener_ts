@@ -1,5 +1,6 @@
 # Typescript link shortener with express and sqlite
 ## PREVIEW without backend! -> [https://linkshare0.pages.dev/](https://linkshare0.pages.dev/)
+Frontend project -> [https://github.com/jucaza1/link-frontend](https://github.com/jucaza1/link-frontend)
 ## Set up
 ```sh
 git clone https://github.com/Jucaza1/link_shortener_ts
